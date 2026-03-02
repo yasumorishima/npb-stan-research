@@ -1,0 +1,44 @@
+name: Build Conversion Factors
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'Which step to run'
+        required: true
+        default: 'identify'
+        type: choice
+        options:
+          - identify
+          - build_factors
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          # pybaseball is only needed for MLB stats fetching
+          # pip install pybaseball
+
+      - name: Run identify_foreign_players
+        if: inputs.step == 'identify'
+        run: python src/identify_foreign_players.py
+
+      - name: Run build_conversion_factors
+        if: inputs.step == 'build_factors'
+        run: python src/build_conversion_factors.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: foreign-player-data
+          path: data/foreign/
+          retention-days: 30
