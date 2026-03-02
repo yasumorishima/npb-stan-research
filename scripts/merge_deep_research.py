@@ -18,6 +18,8 @@ LEAGUE_MAP = {
     "Mexican League": "Independent",
     "Cuba": "Cuba",
     "Amateur": "Amateur",
+    "Amateur (該当なし)": "Amateur",
+    "NPB Draft (該当なし)": None,  # domestic draft player, not foreign
     "United States": None,  # not a league
 }
 
@@ -45,6 +47,7 @@ COUNTRY_MAP = {
     "Czech Republic": "Czech Republic",
     "Belgium": "Belgium",
     "Pakistan": "Pakistan",
+    "Colombia": "Colombia",
 }
 
 COUNTRY_JA = {
@@ -68,13 +71,14 @@ COUNTRY_JA = {
     "Czech Republic": "チェコ",
     "Belgium": "ベルギー",
     "Pakistan": "パキスタン",
+    "Colombia": "コロンビア",
 }
 
 
 def parse_csv_blocks(text):
-    """Extract CSV data from markdown code blocks."""
+    """Extract CSV data from markdown code blocks (```csv or plain ```)."""
     results = {}
-    pattern = r"```csv\n(.*?)```"
+    pattern = r"```(?:csv)?\n(.*?)```"
     blocks = re.findall(pattern, text, re.DOTALL)
     for block in blocks:
         reader = csv.DictReader(io.StringIO(block.strip()))
@@ -85,7 +89,8 @@ def parse_csv_blocks(text):
             en = row.get("english_name", "").strip()
             league = row.get("origin_league", "").strip()
             country = row.get("origin_country", "").strip()
-            if en and league:
+            # Skip invalid english_name (e.g. "（該当選手を特定できず）")
+            if en and league and "該当" not in en:
                 results[name] = {
                     "english_name": en,
                     "origin_league": league,

@@ -10,7 +10,7 @@
 アラウホ,ベネズエラ,Venezuela,MLB,2017,,pitcher,,Elvis Araújo,,,,,,6.48,8.1,1.44
 アルカンタラ,ドミニカ共和国,Dominican Republic,KBO,2021,阪神,hitter,,Raúl Alcántara,,,,,0.1006,,,
 アルシア,ベネズエラ,Venezuela,MLB,2018,日本ハム,hitter,,Oswaldo Arcia,,324,0.222,0.72,0.3265,,,
-アルバレス,キューバ,Cuba,Cuba,2021,ソフトバンク,hitter,投手,,,40,0.162,0.495,0.2305,,,
+アルバレス,キューバ,Cuba,Independent,2021,ソフトバンク,hitter,投手,Dariel Álvarez,,40,0.162,0.495,0.2305,,,
 アルバース,カナダ,Canada,MLB,2018,オリックス,pitcher,,Andrew Albers,,,,,,3.08,114.0,1.11
 アルモンテ,ドミニカ共和国,Dominican Republic,Independent,2018,中日,hitter,内野手,Zoilo Almonte,,546,0.321,0.861,0.3827,,,
 アンダーソン,キューバ,Cuba,AAA,2015,広島,hitter,,Leslie Anderson,,260,0.252,0.729,0.3383,,,
@@ -30,9 +30,9 @@
 ウォーカー,アメリカ,USA,Independent,2022,巨人,hitter,外野手,Adam Walker,,428,0.271,0.821,0.3647,,,
 ウルキデス,アメリカ,USA,Independent,2018,ヤクルト,pitcher,,Jason Urquidez,,,,,,5.06,5.1,1.31
 ウルフ,アメリカ,USA,MLB,2015,西武,pitcher,,Brian Wolfe,,,,,,11.00,9.0,2.44
-ウレーニャ,ドミニカ共和国,Dominican Republic,MLB,2020,巨人,hitter,内野手,,,20,0.167,0.417,0.2076,,,
+ウレーニャ,ドミニカ共和国,Dominican Republic,MiLB,2020,巨人,hitter,内野手,Estamy Gabriel Ureña,,20,0.167,0.417,0.2076,,,
 エスコバー,ベネズエラ,Venezuela,MLB,2017,DeNA,pitcher,,Edwin Escobar,,,,,,3.44,34.0,1.29
-エスパーダ,プエルトリコ,Puerto Rico,MLB,2024,ヤクルト,pitcher,投手,,,,,,,5.0,27.0,1.52
+エスパーダ,プエルトリコ,Puerto Rico,MLB,2024,ヤクルト,pitcher,投手,José Manuel Espada,,,,,,5.0,27.0,1.52
 エスピナル,ドミニカ共和国,Dominican Republic,MLB,2023,ヤクルト,pitcher,,Raynel Espinal,,,,,,5.4,5.0,1.2
 エスピノーザ,ベネズエラ,Venezuela,MLB,2024,オリックス,pitcher,投手,Anderson Espinoza,,,,,,2.63,133.2,1.27
 エチェバリア,キューバ,Cuba,MLB,2021,ロッテ,hitter,,Adeiny Hechavarria,,216,0.203,0.536,0.2395,,,
@@ -63,7 +63,7 @@
 カンポス,ベネズエラ,Venezuela,MLB,2018,広島,pitcher,,Leonel Campos,,,,,,0.00,1.0,2.00
 ガゼルマン,アメリカ,USA,MLB,2022,DeNA,pitcher,,Robert Gsellman,,,,,,2.66,20.1,1.03
 ガラテ,ベネズエラ,Venezuela,Independent,2015,,pitcher,,Victor Garate,,,,,,1.71,26.1,1.41
-ガルシア,ドミニカ共和国,Dominican Republic,MLB,2016,中日,hitter,外野手,,,7,0.0,0.0,,,,
+ガルシア,ドミニカ共和国,Dominican Republic,Cuba,2016,中日,hitter,外野手,Guillermo García García,,7,0.0,0.0,,,,
 ガルセス,ドミニカ共和国,Dominican Republic,MLB,2017,,pitcher,,Frank Garces,,,,,,6.39,31.0,1.52
 ガルビス,ベネズエラ,Venezuela,MLB,2022,ソフトバンク,hitter,,Freddy Galvis,,130,0.171,0.528,0.2578,,,
 ガンケル,アメリカ,USA,AAA,2020,阪神,pitcher,,Joe Gunkel,,,,,,3.18,56.2,1.18
@@ -94,8 +94,8 @@
 コットン,アメリカ,USA,MLB,2023,オリックス,pitcher,,Jharel Cotton,,,,,,5.89,18.1,1.53
 コラス,キューバ,Cuba,Cuba,2018,ソフトバンク,hitter,,Oscar Colás,,,,,,,,
 コラレス,アメリカ,USA,Independent,2017,楽天,pitcher,,Josh Corrales,,,,,,15.00,3.0,3.67
-コルデロ,ドミニカ共和国,Dominican Republic,MLB,2019,DeNA,hitter,投手,,,,,,,,,
-コルニエル,ドミニカ共和国,Dominican Republic,MLB,2020,広島,pitcher,投手,,,,,,,,,
+コルデロ,ドミニカ共和国,Dominican Republic,Independent,2019,DeNA,hitter,投手,Remy Moise Cordero,,,,,,,,
+コルニエル,ドミニカ共和国,Dominican Republic,MiLB,2020,広島,pitcher,投手,Robert Corniel,,,,,,,,
 コーク,アメリカ,USA,MLB,2017,,pitcher,,Phil Coke,,,,,,4.56,23.2,1.69
 コーディエ,アメリカ,USA,MLB,2016,,pitcher,,Erik Cordier,,,,,,7.3,12.1,2.11
 コール,アメリカ,USA,MLB,2022,ヤクルト,pitcher,,A.J. Cole,,,,,,2.75,36.0,1.08
@@ -108,16 +108,16 @@
 サファテ,アメリカ,USA,AAA,2015,ソフトバンク,pitcher,,Dennis Sarfate,,,,,,1.11,64.2,0.63
 サモンズ,アメリカ,USA,MLB,2025,ロッテ,pitcher,,Bryan Sammons,,,,,,3.78,85.2,1.34
 サンズ,アメリカ,USA,KBO,2020,阪神,hitter,,Jerry Sands,,443,0.257,0.814,0.3707,,,
-サンタナ,ドミニカ共和国,Dominican Republic,MLB,2019,広島,hitter,外野手,,,34,0.182,0.388,0.1797,,,
+サンタナ,ドミニカ共和国,Dominican Republic,MiLB,2019,広島,hitter,外野手,Juan Daniel Santana,,34,0.182,0.388,0.1797,,,
 サンチェス,ドミニカ共和国,Dominican Republic,KBO,2015,巨人,pitcher,,Angel Sánchez,,,,,,,,
 サンティアゴ,プエルトリコ,Puerto Rico,AAA,2015,,pitcher,,Mario Santiago,,,,,,4.32,16.2,1.62
 サントス,キューバ,Cuba,Cuba,2017,ロッテ,hitter,,Roel Santos,,193,0.25,0.637,0.2879,,,
 ザガースキー,アメリカ,USA,MLB,2015,,pitcher,,Mike Zagurski,,,,,,2.40,15.0,1.33
-ザバラ,ドミニカ共和国,Dominican Republic,MLB,2024,日本ハム,pitcher,投手,,,,,,,1.2,15.0,1.0
+ザバラ,ドミニカ共和国,Dominican Republic,AAA,2024,日本ハム,pitcher,投手,Aneurys Zabala,,,,,,1.2,15.0,1.0
 シアーホルツ,アメリカ,USA,MLB,2015,,hitter,,Nate Schierholtz,,248,0.25,0.734,0.3351,,,
 シェッパーズ,アメリカ,USA,MLB,2018,ロッテ,pitcher,,Tanner Scheppers,,,,,,4.54,37.2,1.65
 シエラ,ドミニカ共和国,Dominican Republic,Independent,2020,中日,hitter,,Moisés Sierra,,94,0.225,0.617,0.2955,,,
-シャイナー,アメリカ,USA,MLB,2024,広島,hitter,内野手,,,31,0.133,0.428,0.1977,,,
+シャイナー,アメリカ,USA,AAA,2024,広島,hitter,内野手,Jake Scheiner,,31,0.133,0.428,0.1977,,,
 シャッケルフォード,アメリカ,USA,MLB,2021,DeNA,pitcher,,Kevin Shackelford,,,,,,5.17,31.1,1.40
 シュウィンデル,アメリカ,USA,MLB,2023,オリックス,hitter,,Frank Schwindel,,70,0.188,0.461,0.2053,,,
 シュリッター,アメリカ,USA,MLB,2017,,pitcher,,Brian Schlitter,,,,,,2.83,63.2,1.37
@@ -134,8 +134,8 @@
 スアレス,ベネズエラ,Venezuela,Independent,2016,ソフトバンク,pitcher,,Robert Suarez,,,,,,3.19,53.2,1.25
 スコット,南アフリカ,South Africa,MLB,2020,広島,pitcher,,Tayler Scott,,,,,,15.75,8.0,3.13
 スタンリッジ,アメリカ,USA,AAA,2015,,pitcher,,Jason Standridge,,,,,,3.74,144.1,1.34
-スチュワート・ジュニア,アメリカ,USA,MLB,2019,ソフトバンク,pitcher,投手,,,,,,,,,
-スティーブンソン,アメリカ,USA,MLB,2024,日本ハム,hitter,外野手,,,63,0.161,0.368,0.1716,,,
+スチュワート・ジュニア,アメリカ,USA,Amateur,2019,ソフトバンク,pitcher,投手,Carter Stewart Jr.,,,,,,,,
+スティーブンソン,アメリカ,USA,MLB,2024,日本ハム,hitter,外野手,Andrew Stevenson,,63,0.161,0.368,0.1716,,,
 スパンジェンバーグ,アメリカ,USA,MLB,2020,西武,hitter,,Cory Spangenberg,,445,0.268,0.807,0.3602,,,
 スパークマン,アメリカ,USA,MLB,2021,オリックス,pitcher,,Glenn Sparkman,,,,,,6.88,17.0,1.35
 スミス,アメリカ,USA,MLB,2022,西武,pitcher,,Burch Smith,,,,,,3.29,38.1,1.15
@@ -149,8 +149,8 @@
 ソリス,アメリカ,USA,MLB,2019,DeNA,pitcher,,Sammy Solís,,,,,,2.08,4.1,1.38
 タバーレス,ドミニカ共和国,Dominican Republic,Independent,2018,広島,pitcher,,Yohan Tavarez,,,,,,,,
 ターリー,アメリカ,USA,MLB,2022,広島,pitcher,投手,Nik Turley,,,,,,3.11,37.2,1.12
-ダイクストラ,アメリカ,USA,MLB,2024,ロッテ,pitcher,投手,,,,,,,1.64,11.0,1.64
-ダウンズ,コロンビア,Colombia,MLB,2024,ソフトバンク,hitter,内野手,,,26,0.273,0.794,0.3774,,,
+ダイクストラ,アメリカ,USA,Independent,2024,ロッテ,pitcher,投手,James Dykstra,,,,,,1.64,11.0,1.64
+ダウンズ,コロンビア,Colombia,AAA,2024,ソフトバンク,hitter,内野手,Jeter Downs,,26,0.273,0.794,0.3774,,,
 ダフィー,アメリカ,USA,MLB,2017,,hitter,,Matt Duffy,,183,0.201,0.651,0.2960,,,
 ダーモディ,アメリカ,USA,MLB,2021,西武,pitcher,,Matt Dermody,,,,,,5.13,33.1,1.77
 チェイビス,アメリカ,USA,AAA,2025,中日,hitter,,Michael Chavis,,120,0.171,0.619,0.2894,,,
@@ -158,7 +158,7 @@
 チェン・グァンユウ,台湾,Taiwan,Amateur,2015,ロッテ,pitcher,,Chen Kuan-Yu,,,,,,3.23,61.1,1.37
 ティノコ,ベネズエラ,Venezuela,MLB,2023,西武,pitcher,,Jesús Tinoco,,,,,,2.83,35.0,1.51
 テームズ,アメリカ,USA,MLB,2021,巨人,hitter,,Eric Thames,,2,0.0,0.0,,,,
-ディアス,ベネズエラ,Venezuela,MLB,2020,DeNA,hitter,投手,,,,,,,,,
+ディアス,ベネズエラ,Venezuela,Amateur,2020,DeNA,hitter,投手,Yofrec Diaz,,,,,,,,
 ディカーソン,アメリカ,USA,Independent,2024,中日,hitter,外野手,Alex Dickerson,,102,0.205,0.666,0.3177,,,
 ディクソン,アメリカ,USA,AAA,2015,オリックス,pitcher,,Brandon Dickson,,,,,,2.48,130.2,1.25
 ディプラン,ドミニカ共和国,Dominican Republic,AAA,2020,巨人,pitcher,,Nattino Diplan,,,,,,19.29,2.1,3.86
@@ -171,7 +171,7 @@
 デラロサ,ドミニカ共和国,Dominican Republic,MLB,2019,巨人,pitcher,,Rubby De La Rosa,,,,,,2.25,24.0,0.88
 デービス,アメリカ,USA,MLB,2025,西武,hitter,,J.D. Davis,,131,0.204,0.623,0.2991,,,
 トンキン,アメリカ,USA,MLB,2018,日本ハム,pitcher,,Michael Tonkin,,,,,,3.71,51.0,1.33
-トーマス,アメリカ,USA,MLB,2024,オリックス,hitter,外野手,,,18,0.0,0.0,,,,
+トーマス,アメリカ,USA,AAA,2024,オリックス,hitter,外野手,Cody Thomas,,18,0.0,0.0,,,,
 ドミンゲス,アメリカ,USA,MLB,2018,ロッテ,hitter,,Matt Dominguez,,93,0.19,0.757,0.3347,,,
 ドリス,ドミニカ共和国,Dominican Republic,MLB,2016,阪神,pitcher,,Rafael Dolis,,,,,,2.12,34.0,1.03
 ドレイク,キューバ,Cuba,Independent,2017,,hitter,,Yadir Drake,,86,0.232,0.56,0.2568,,,
@@ -187,7 +187,7 @@
 ノイジー,アメリカ,USA,MLB,2023,阪神,hitter,外野手,Sheldon Neuse,,516,0.24,0.623,0.2887,,,
 ノリン,アメリカ,USA,MLB,2020,西武,pitcher,,Sean Nolin,,,,,,6.75,21.1,1.50
 ハイネマン,アメリカ,USA,MLB,2021,巨人,hitter,,Scott Heineman,,28,0.16,0.45,0.2220,,,
-ハッチ,アメリカ,USA,MLB,2024,広島,pitcher,投手,,,,,,,7.36,22.0,1.73
+ハッチ,アメリカ,USA,MLB,2024,広島,pitcher,投手,Thomas Hatch,,,,,,7.36,22.0,1.73
 ハフ,アメリカ,USA,KBO,2018,ヤクルト,pitcher,,David Huff,,,,,,4.87,94.1,1.40
 ハフマン,アメリカ,USA,MLB,2015,,hitter,,Chad Huffman,,13,0.091,0.322,0.1820,,,
 ハワード,アメリカ,USA,MLB,2025,楽天,pitcher,,Spencer Howard,,,,,,2.22,48.2,1.09
@@ -207,7 +207,7 @@
 バルガス,プエルトリコ,Puerto Rico,MLB,2019,ロッテ,pitcher,,Kennys Vargas,,,,,,,,
 バルディリス,ベネズエラ,Venezuela,MiLB,2015,,hitter,,Aarom Baldiris,,525,0.258,0.725,0.3365,,,
 バルデス,キューバ,Cuba,AAA,2015,,pitcher,,Raul Valdes,,,,,,3.18,133.0,1.25
-バルドナード,パナマ,Panama,MLB,2023,巨人,pitcher,投手,,,,,,,1.69,21.1,1.17
+バルドナード,パナマ,Panama,AAA,2023,巨人,pitcher,投手,Alberto Baldonado,,,,,,1.69,21.1,1.17
 バレラ,ベネズエラ,Venezuela,MLB,2022,オリックス,hitter,,Breyvic Valera,,127,0.205,0.57,0.2713,,,
 バレンティン,キュラソー,Curaçao,MLB,2015,ヤクルト,hitter,,Wladimir Balentien,,52,0.186,0.629,0.3071,,,
 バンデンハーク,オランダ,Netherlands,KBO,2015,ソフトバンク,pitcher,,Rick van den Hurk,,,,,,2.52,93.0,0.98
@@ -234,9 +234,9 @@
 ピープルズ,アメリカ,USA,AAA,2020,DeNA,pitcher,,Michael Peoples,,,,,,4.97,38.0,1.39
 ファイフ,アメリカ,USA,MLB,2017,,pitcher,,Stephen Fife,,,,,,6.86,21.0,2.14
 ファビアン,ドミニカ共和国,Dominican Republic,AAA,2025,広島,hitter,,Sandro Fabian,,572,0.276,0.741,0.3382,,,
-フェリス,ドミニカ共和国,Dominican Republic,MLB,2023,ロッテ,pitcher,投手,,,,,,,3.14,14.1,1.4
+フェリス,ドミニカ共和国,Dominican Republic,MiLB,2023,ロッテ,pitcher,投手,Daritzon Feliz,,,,,,3.14,14.1,1.4
 フェルナンド,ブラジル,Brazil,Independent,2015,楽天,hitter,,Luciano Fernando,,84,0.192,0.506,0.2411,,,
-フォード,アメリカ,USA,MLB,2024,DeNA,hitter,内野手,,,22,0.2,0.623,0.2929,,,
+フォード,アメリカ,USA,MLB,2024,DeNA,hitter,内野手,Mike Ford,,22,0.2,0.623,0.2929,,,
 フランコ,ドミニカ共和国,Dominican Republic,MLB,2023,楽天,hitter,内野手,Maikel Franco,,334,0.221,0.644,0.2951,,,
 フランシスコ,ドミニカ共和国,Dominican Republic,MLB,2015,,hitter,,Juan Francisco,,18,0.167,0.333,0.1536,,,
 フランスア,ドミニカ共和国,Dominican Republic,Independent,2018,広島,pitcher,,Geronimo Franzua,,,,,,1.66,65.0,1.11
@@ -254,7 +254,7 @@
 ブロードウェイ,アメリカ,USA,MLB,2016,,pitcher,,Mike Broadway,,,,,,4.5,6.0,1.5
 ヘイグ,アメリカ,USA,MLB,2016,,hitter,,Matt Hague,,124,0.231,0.685,0.3228,,,
 ヘルウェグ,アメリカ,USA,MLB,2018,広島,pitcher,,Johnny Hellweg,,,,,,1.13,8.0,1.13
-ヘルナンデス,ベネズエラ,Venezuela,MLB,2023,ソフトバンク,hitter,投手,,,,,,,,,
+ヘルナンデス,ベネズエラ,Venezuela,AAA,2023,ソフトバンク,hitter,投手,Darwinzon Hernandez,,,,,,,,
 ヘルマン,ドミニカ共和国,Dominican Republic,MLB,2015,,hitter,,Esteban German,,245,0.267,0.665,0.3144,,,
 ヘルメン,ドミニカ共和国,Dominican Republic,MLB,2017,,pitcher,,Gonzalez Germen,,,,,,2.68,47.0,1.45
 ヘーゲンズ,アメリカ,USA,MLB,2016,,pitcher,,Bradin Hagens,,,,,,2.92,83.1,1.25
@@ -288,7 +288,7 @@
 マテオ,ドミニカ共和国,Dominican Republic,MLB,2016,阪神,pitcher,,Marcos Mateo,,,,,,1.8,55.0,1.16
 マラー,アメリカ,USA,MLB,2025,中日,pitcher,,Kyle Muller,,,,,,3.54,101.2,1.28
 マルク,ベルギー,Belgium,Independent,2020,中日,pitcher,,Kento Marc Ishida,,,,,,12.00,3.0,2.67
-マルセリーノ,ドミニカ共和国,Dominican Republic,MLB,2022,DeNA,pitcher,投手,,,,,,,,,
+マルセリーノ,ドミニカ共和国,Dominican Republic,MiLB,2022,DeNA,pitcher,投手,Hansel Marcelino,,,,,,,,
 マルテ,ドミニカ共和国,Dominican Republic,MLB,2019,阪神,hitter,,Jefry Marte,,412,0.284,0.825,0.3721,,,
 マルティネス,キューバ,Cuba,Cuba,2018,巨人,pitcher,捕手,Raidel Martinez,,,,,,3.51,161.2,1.29
 マルモレホス,アメリカ,USA,MLB,2022,楽天,hitter,,José Marmolejos,,223,0.208,0.62,0.2855,,,
@@ -310,7 +310,7 @@
 メネセス,メキシコ,Mexico,AAA,2019,オリックス,hitter,,Joey Meneses,,118,0.206,0.651,0.2939,,,
 メヒア,パナマ,Panama,MiLB,2015,広島,hitter,投手,Alejandro Mejia,,525,0.235,0.778,0.3537,,,
 メルセデス,ドミニカ共和国,Dominican Republic,AAA,2018,巨人,pitcher,投手,C.C. Mercedes,,,,,,2.05,92.0,0.92
-メンデス,ベネズエラ,Venezuela,MLB,2017,巨人,pitcher,投手,,,,,,,6.52,9.2,1.55
+メンデス,ベネズエラ,Venezuela,Independent,2017,巨人,pitcher,投手,Yohander Méndez,,,,,,6.52,9.2,1.55
 メンドーサ,メキシコ,Mexico,MLB,2015,,pitcher,,Luis Mendoza,,,,,,3.00,3.0,1.33
 モイネロ,キューバ,Cuba,Cuba,2017,ソフトバンク,pitcher,投手,Livan Moinelo,,,,,,2.52,35.2,0.98
 モスコーソ,ベネズエラ,Venezuela,MLB,2015,,pitcher,,Guillermo Moscoso,,,,,,5.19,60.2,1.47
@@ -335,13 +335,13 @@
 レアード,アメリカ,USA,AAA,2015,日本ハム,hitter,,Brandon Laird,,554,0.231,0.789,0.3570,,,
 レイ,アメリカ,USA,CPBL,2015,ソフトバンク,pitcher,,Kenneth Ray,,,,,,3.79,107.0,1.29
 レイエス,ドミニカ共和国,Dominican Republic,MLB,2024,日本ハム,hitter,外野手,Franmil Reyes,,368,0.29,0.912,0.4115,,,
-レイノルズ,アメリカ,USA,MLB,2024,広島,hitter,内野手,,,6,0.0,0.167,0.1211,,,
+レイノルズ,アメリカ,USA,AAA,2024,広島,hitter,内野手,Matt Reynolds,,6,0.0,0.167,0.1211,,,
 レイビン,アメリカ,USA,MLB,2019,ロッテ,pitcher,,Josh Ravin,,,,,,27.00,1.2,3.60
 レグナルト,アメリカ,USA,AAA,2019,広島,pitcher,,Kyle Regnault,,,,,,3.34,59.1,1.47
 レビーラ,キューバ,Cuba,Cuba,2022,中日,hitter,,Pedro Revilla,,66,0.203,0.509,0.2319,,,
 ロサリオ,ドミニカ共和国,Dominican Republic,MiLB,2015,阪神,hitter,,Rainel Rosario,,136,0.258,0.67,0.3146,,,
 ロジャース,アメリカ,USA,MLB,2017,,hitter,,Jason Rogers,,140,0.252,0.759,0.3408,,,
-ロドリゲス,ドミニカ共和国,Dominican Republic,MLB,2018,中日,pitcher,投手,,,,,,,2.30,27.1,1.32
+ロドリゲス,ドミニカ共和国,Dominican Republic,AAA,2018,中日,pitcher,投手,Joely Rodríguez,,,,,,2.30,27.1,1.32
 ロハス・ジュニア,ドミニカ共和国,Dominican Republic,KBO,2021,阪神,hitter,,Mel Rojas Jr.,,206,0.217,0.663,0.3016,,,
 ロペス,ドミニカ共和国,Dominican Republic,MLB,2015,DeNA,hitter,投手,Jose Lopez,,565,0.291,0.843,0.3824,,,
 ロマック,カナダ,Canada,MLB,2016,,hitter,,Jamie Romak,,85,0.113,0.374,0.2016,,,
