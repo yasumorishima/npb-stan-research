@@ -28,9 +28,10 @@ parameters {
 
 model {
   // Regularized priors: corrections start near zero
-  delta_K  ~ normal(0, 0.02);
-  delta_BB ~ normal(0, 0.02);
-  sigma    ~ exponential(20);   // wOBA residual scale ~0.05
+  // Prior scale matches typical effect size: 1 z-score of K%/BB% ≈ ±0.010 wOBA
+  delta_K  ~ normal(0, 0.05);
+  delta_BB ~ normal(0, 0.05);
+  sigma    ~ exponential(1);    // wOBA residual scale; exponential(1) avoids sigma→0
 
   actual_woba ~ normal(
     marcel_woba + delta_K * z_K + delta_BB * z_BB,
