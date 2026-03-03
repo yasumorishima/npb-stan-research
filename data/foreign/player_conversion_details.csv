@@ -19,6 +19,7 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 ウィーラー,Zelous Wheeler,MLB,2015,hitter,19.4,3.2,0.2360,0.3626,1.5363,,,,,,
 ウェンデルケン,J.B. Wendelken,MLB,2023,pitcher,17.2,11.5,,,,5.28,1.66,0.3144,5.01,2.62,0.5230
 エスコバー,Edwin Escobar,MLB,2017,pitcher,14.7,10.3,,,,7.23,3.44,0.4758,5.94,3.77,0.6347
+エスコバー,Alcides Escobar,MLB,2020,hitter,13.9,5.5,0.2610,0.2942,1.1272,,,,,,
 エスピノーザ,Anderson Espinoza,MLB,2024,pitcher,22.4,18.8,,,,5.40,2.63,0.4870,7.15,2.84,0.3972
 エチェバリア,Adeiny Hechavarria,MLB,2021,hitter,19.0,6.3,0.2710,0.2395,0.8839,,,,,,
 エドワーズ,Jon Edwards,MLB,2020,pitcher,29.3,21.3,,,,4.32,,,6.49,,
@@ -59,6 +60,7 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 ケラー,Kyle Keller,MLB,2022,pitcher,23.2,14.2,,,,6.48,3.31,0.5108,6.95,1.74,0.2504
 ゲレーロ,Alex Guerrero,MLB,2017,hitter,24.8,3.0,0.2970,0.3949,1.3296,,,,,,
 コットン,Jharel Cotton,MLB,2023,pitcher,21.5,11.0,,,,3.56,,,4.95,,
+コルデロ,Franchy Cordero,MLB,2024,hitter,35.2,2.8,0.286,,,,,,,,
 コーク,Phil Coke,MLB,2017,pitcher,8.9,15.6,,,,3.60,,,6.05,,
 コーディエ,Erik Cordier,MLB,2016,pitcher,12.5,10.7,,,,5.84,,,4.76,,
 コール,A.J. Cole,MLB,2022,pitcher,21.1,9.5,,,,3.09,2.75,0.8900,4.31,3.59,0.8329
@@ -68,6 +70,7 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 サイスニード,Cy Sneed,MLB,2021,pitcher,25.3,12.0,,,,5.71,3.41,0.5972,4.75,3.91,0.8232
 サモンズ,Bryan Sammons,MLB,2025,pitcher,17.3,8.7,,,,3.62,3.78,1.0442,5.80,4.85,0.8362
 サンズ,Jerry Sands,KBO,2020,hitter,41.4,5.2,0.2520,0.3707,1.4710,,,,,,
+サンタナ,Domingo Santana,MLB,2021,hitter,29.8,15.5,0.2710,0.3917,1.4453,,,,,,
 ザガースキー,Mike Zagurski,MLB,2015,pitcher,20.9,11.7,,,,5.54,,,4.62,,
 シアーホルツ,Nate Schierholtz,MLB,2015,hitter,21.9,5.2,0.2460,0.3351,1.3622,,,,,,
 シェッパーズ,Tanner Scheppers,MLB,2018,pitcher,18.2,13.1,,,,5.63,4.54,0.8064,5.46,3.36,0.6154
@@ -77,10 +80,14 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 シュリッター,Brian Schlitter,MLB,2017,pitcher,12.8,7.9,,,,4.15,2.83,0.6819,3.61,3.92,1.0859
 シューメーカー,Matt Shoemaker,MLB,2022,pitcher,14.1,9.5,,,,8.06,4.25,0.5273,6.57,4.63,0.7047
 ジェンセン,Kyle Jensen,MLB,2017,hitter,38.2,5.9,0.304,,,,,,,,
+ジャクソン,Andre Jackson,MLB,2024,pitcher,22.2,8.6,,,,4.99,2.90,0.5812,4.90,3.29,0.6714
 ジョンソン,Kris Johnson,AAA,2015,pitcher,18.8,14.1,,,,4.73,1.85,0.3911,5.31,2.98,0.5612
+ジョンソン,Pierce Johnson,MLB,2019,pitcher,19.4,11.8,,,,5.56,2.59,0.4658,4.51,3.58,0.7938
 ジョーダン,Jordan Norberto,MLB,2016,pitcher,21.7,10.4,,,,2.77,4.24,1.5307,3.90,4.16,1.0667
+ジョーダン,Taylor Jordan,MLB,2016,pitcher,14.3,7.8,,,,5.29,4.24,0.8015,2.90,4.16,1.4345
 ジョーンズ,Adam Jones,MLB,2020,hitter,19.1,5.9,0.3080,0.3406,1.1058,,,,,,
 ジー,Dillon Gee,MLB,2018,pitcher,19.3,7.1,,,,3.47,,,4.76,,
+スアレス,Albert Suárez,MLB,2019,pitcher,25.2,8.1,,,,5.12,,,3.79,,
 スコット,Tayler Scott,MLB,2020,pitcher,15.1,11.8,,,,14.33,,,9.03,,
 スティーブンソン,Andrew Stevenson,MLB,2024,hitter,20.0,5.0,0.216,,,,,,,,
 スパンジェンバーグ,Cory Spangenberg,MLB,2020,hitter,35.3,5.9,0.2670,0.3602,1.3492,,,,,,
@@ -109,6 +116,7 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 トンキン,Michael Tonkin,MLB,2018,pitcher,24.7,12.4,,,,5.14,3.71,0.7218,6.44,3.98,0.6180
 トーマス,Cody Thomas,AAA,2024,hitter,37.0,8.7,0.300,,,,,,,,
 ドミンゲス,Matt Dominguez,MLB,2018,hitter,20.6,4.8,0.260,,,,,,,,
+ドミンゲス,Seranthony Dominguez,MLB,2025,pitcher,26.7,8.2,,,,4.45,,,4.68,,
 ドリス,Rafael Dolis,MLB,2016,pitcher,13.9,13.3,,,,6.39,2.12,0.3318,5.59,2.50,0.4472
 ナバーロ,Efren Navarro,MLB,2016,hitter,18.2,5.7,0.2610,0.3201,1.2264,,,,,,
 ニックス,Jacob Nix,MLB,2023,pitcher,11.1,6.8,,,,7.02,,,5.83,,
@@ -160,16 +168,20 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 ブキャナン,David Buchanan,MLB,2017,pitcher,12.5,8.3,,,,6.99,3.66,0.5236,5.33,4.47,0.8386
 ブセニッツ,Alan Busenitz,MLB,2019,pitcher,20.6,11.1,,,,7.82,1.94,0.2481,7.11,3.08,0.4332
 ブラッシュ,Jabari Blash,MLB,2019,hitter,53.3,11.1,0.1630,0.4154,2.5482,,,,,,
+ブリガム,Jacob Brigham,MLB,2016,pitcher,14.3,9.5,,,,8.64,5.24,0.6065,4.09,4.52,1.1051
 ブリンソン,Lewis Brinson,MLB,2023,hitter,35.9,5.1,0.2890,0.3117,1.0784,,,,,,
 ブルワー,Colten Brewer,MLB,2023,pitcher,20.5,11.5,,,,5.61,,,6.04,,
 ブロッソー,Mike Brosseau,MLB,2023,hitter,30.0,8.8,0.3380,0.2280,0.6746,,,,,,
 ブロードウェイ,Mike Broadway,MLB,2016,pitcher,16.9,9.1,,,,5.19,,,3.77,,
 ヘイグ,Matt Hague,MLB,2016,hitter,18.9,4.1,0.2390,0.3228,1.3504,,,,,,
 ヘルウェグ,Johnny Hellweg,MLB,2018,pitcher,5.6,16.0,,,,6.75,,,7.06,,
+ヘルナンデス,Elier Hernández,MLB,2024,hitter,42.9,2.9,0.1930,0.3674,1.9038,,,,,,
 ヘルメン,Gonzalez Germen,MLB,2017,pitcher,17.6,13.7,,,,5.31,2.68,0.5047,5.09,3.52,0.6916
 ペゲーロ,Carlos Peguero,MLB,2016,hitter,41.1,14.4,0.3140,0.3769,1.2002,,,,,,
 ペルドモ,Luis Perdomo,MLB,2023,pitcher,12.5,3.1,,,,3.80,2.13,0.5605,4.80,2.65,0.5521
 ペーニャ,Wily Mo Pena,MLB,2015,hitter,32.5,4.2,0.2910,0.3938,1.3531,,,,,,
+ペーニャ,Wily Mo Peña,MLB,2017,hitter,32.5,4.2,0.2910,0.3746,1.2874,,,,,,
+ペーニャ,Ramiro Peña,MLB,2017,hitter,17.6,2.2,0.3220,0.3746,1.1634,,,,,,
 ボイト,Luke Voit,Independent,2025,hitter,36.5,5.4,0.2510,0.4033,1.6066,,,,,,
 ボグセビック,Brian Bogusevic,MLB,2016,hitter,34.4,4.9,0.3080,0.2844,0.9232,,,,,,
 ボス,Austin Voth,MLB,2025,pitcher,24.6,7.3,,,,3.69,3.96,1.0732,4.12,3.32,0.8058
@@ -188,8 +200,12 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 マテオ,Marcos Mateo,MLB,2016,pitcher,29.2,8.0,,,,4.00,1.80,0.4500,4.43,2.92,0.6591
 マラー,Kyle Muller,MLB,2025,pitcher,17.8,5.0,,,,4.01,3.54,0.8828,3.96,3.21,0.8106
 マルテ,Jefry Marte,MLB,2019,hitter,19.6,6.2,0.2810,0.3721,1.3242,,,,,,
+マルテ,Yunior Marte,MLB,2025,pitcher,18.1,11.8,,,,6.92,1.95,0.2818,5.63,3.77,0.6696
+マルティネス,Nick Martinez,MLB,2018,pitcher,14.0,5.9,,,,5.66,3.51,0.6201,5.80,4.05,0.6983
 マルモレホス,José Marmolejos,MLB,2022,hitter,32.0,12.3,0.2560,0.2855,1.1153,,,,,,
 マレーロ,Chris Marrero,MLB,2017,hitter,23.1,3.4,0.2520,0.4080,1.6191,,,,,,
+マーティン,Chris Martin,MLB,2016,pitcher,18.2,6.1,,,,5.66,1.07,0.1890,3.67,1.80,0.4905
+マーティン,Leonys Martín,MLB,2019,hitter,21.8,8.5,0.3230,0.3733,1.1559,,,,,,
 マーフィー,Patrick Murphy,MLB,2024,pitcher,22.7,7.8,,,,5.14,3.26,0.6342,3.99,3.56,0.8922
 マーベル,James Marvel,MLB,2023,pitcher,10.7,7.1,,,,8.31,,,6.56,,
 ミッシュ,Pat Misch,KBO,2016,pitcher,14.5,2.5,,,,3.82,,,3.64,,
@@ -197,11 +213,13 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 ミレッジ,Lastings Milledge,MLB,2015,hitter,15.0,6.8,0.316,,,,,,,,
 ムーア,Matt Moore,MLB,2020,pitcher,27.3,3.0,,,,0.00,,,1.71,,
 メネズ,Conner Menez,MLB,2022,pitcher,24.2,4.8,,,,3.86,,,3.53,,
+メヒア,Francisco Mejia,MLB,2023,hitter,21.7,2.3,0.279,,,,,,,,
 メンドーサ,Luis Mendoza,MLB,2015,pitcher,12.9,10.3,,,,5.36,3.51,0.6549,4.75,4.07,0.8568
 モスコーソ,Guillermo Moscoso,MLB,2015,pitcher,24.2,16.4,,,,5.10,5.19,1.0176,5.55,4.39,0.7910
 モヤ,Steven Moya,MLB,2018,hitter,38.0,5.0,0.3310,0.3510,1.0606,,,,,,
 モレノ,Diego Moreno,MLB,2018,pitcher,17.8,6.7,,,,5.23,,,4.29,,
 モレル,Brent Morel,MLB,2016,hitter,22.0,4.9,0.1930,0.3172,1.6434,,,,,,
+モレル,Justin Morneau,MLB,2016,hitter,13.7,7.1,0.3530,0.3172,0.8985,,,,,,
 モンテス,Coco Montes,AAA,2024,hitter,29.3,4.9,0.2470,0.3225,1.3056,,,,,,
 モンテロ,Elehuris Montero,MLB,2025,hitter,22.7,8.1,0.2540,0.3163,1.2455,,,,,,
 ヤフーレ,Miguel Yajure,MLB,2024,pitcher,13.4,13.4,,,,8.88,3.34,0.3761,5.62,3.58,0.6370
@@ -217,7 +235,9 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 レイノルズ,Matt Reynolds,AAA,2024,hitter,28.7,9.6,0.293,,,,,,,,
 レイビン,Josh Ravin,MLB,2019,pitcher,26.8,12.7,,,,6.48,,,5.80,,
 ロジャース,Jason Rogers,MLB,2017,hitter,27.3,21.2,0.2430,0.3408,1.4023,,,,,,
+ロジャース,Miguel Rojas,MLB,2017,hitter,12.6,5.1,0.2650,0.3408,1.2859,,,,,,
 ロドリゲス,Joely Rodríguez,AAA,2018,pitcher,13.4,11.2,,,,6.33,5.26,0.8310,5.86,3.09,0.5273
+ロドリゲス,Elvin Rodriguez,MLB,2023,pitcher,17.5,10.5,,,,10.62,5.09,0.4793,8.30,5.27,0.6349
 ロペス,Jose Lopez,MLB,2015,hitter,16.5,3.6,0.2720,0.3824,1.4059,,,,,,
 ロメロ,Stefen Romero,MLB,2017,hitter,25.3,2.1,0.2390,0.3727,1.5594,,,,,,
 ロンドン,Jorge Rondón,MLB,2017,pitcher,11.1,11.1,,,,13.19,,,6.48,,
@@ -225,6 +245,7 @@ npb_name,english_name,origin_league,npb_first_year,player_type,prev_K_pct,prev_B
 ローレンス,Casey Lawrence,MLB,2019,pitcher,13.2,9.4,,,,7.33,,,4.62,,
 ワグナー,Neil Wagner,MLB,2018,pitcher,12.2,8.2,,,,8.10,4.22,0.5210,4.73,5.18,1.0951
 ワゲスパック,Jacob Waguespack,MLB,2022,pitcher,17.8,10.0,,,,8.15,2.97,0.3644,4.72,2.97,0.6292
+ＤＪ．ジョンソン,DJ Johnson,MLB,2020,pitcher,20.7,16.4,,,,5.04,,,4.45,,
 ＤＪ．ジョンソン,DJ Johnson,MLB,2020,pitcher,20.7,16.4,,,,5.04,,,4.45,,
 Ｅ．ラミレス,Emmanuel Ramirez,MLB,2025,pitcher,22.8,8.7,,,,6.97,,,4.62,,
 Ｋ．ケラー,Kyle Keller,MLB,2023,pitcher,23.2,14.2,,,,6.48,,,6.95,,
