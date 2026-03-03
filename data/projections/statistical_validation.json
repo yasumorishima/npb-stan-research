@@ -1,0 +1,343 @@
+{
+  "step": "10_statistical_validation",
+  "japanese_loocv": {
+    "years": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "n_hitters": 1333,
+    "n_pitchers": 1154,
+    "player_level_all": {
+      "hitter_woba": {
+        "n": 1333,
+        "mae_marcel": 0.03764,
+        "mae_stan": 0.03737,
+        "delta_mae": 0.00027,
+        "paired_t_stat": 1.1937,
+        "paired_t_p": 0.232793,
+        "wilcoxon_p": 0.184919,
+        "bootstrap_p_stan_better": 0.8831,
+        "cohens_d": 0.0327,
+        "stan_win_rate": "692/1333 (51.9%)"
+      },
+      "pitcher_era": {
+        "n": 1154,
+        "mae_marcel": 0.95098,
+        "mae_stan": 0.94847,
+        "delta_mae": 0.00251,
+        "paired_t_stat": 0.6783,
+        "paired_t_p": 0.497707,
+        "wilcoxon_p": 0.802485,
+        "bootstrap_p_stan_better": 0.7471,
+        "cohens_d": 0.02,
+        "stan_win_rate": "570/1154 (49.4%)"
+      }
+    },
+    "team_level_all": {
+      "mae_marcel": 11.728,
+      "mae_stan": 11.576,
+      "delta_mae": -0.152,
+      "paired_t_p": 0.11805,
+      "bootstrap_p_stan_better": 0.9395,
+      "n_team_years": 96,
+      "yearly": {
+        "2018": {
+          "marcel": 8.977,
+          "stan": 8.749,
+          "delta": -0.228,
+          "n": 12
+        },
+        "2019": {
+          "marcel": 11.966,
+          "stan": 11.555,
+          "delta": -0.411,
+          "n": 12
+        },
+        "2020": {
+          "marcel": 9.666,
+          "stan": 9.58,
+          "delta": -0.086,
+          "n": 12
+        },
+        "2021": {
+          "marcel": 12.155,
+          "stan": 12.334,
+          "delta": 0.179,
+          "n": 12
+        },
+        "2022": {
+          "marcel": 12.138,
+          "stan": 12.005,
+          "delta": -0.133,
+          "n": 12
+        },
+        "2023": {
+          "marcel": 11.629,
+          "stan": 11.491,
+          "delta": -0.139,
+          "n": 12
+        },
+        "2024": {
+          "marcel": 16.312,
+          "stan": 16.09,
+          "delta": -0.222,
+          "n": 12
+        },
+        "2025": {
+          "marcel": 10.979,
+          "stan": 10.802,
+          "delta": -0.178,
+          "n": 12
+        }
+      }
+    },
+    "player_level_no2021": {
+      "hitter_woba": {
+        "n": 1172,
+        "mae_marcel": 0.03749,
+        "mae_stan": 0.03727,
+        "delta_mae": 0.00022,
+        "paired_t_stat": 0.943,
+        "paired_t_p": 0.345885,
+        "wilcoxon_p": 0.237111,
+        "bootstrap_p_stan_better": 0.8285,
+        "cohens_d": 0.0275,
+        "stan_win_rate": "610/1172 (52.0%)"
+      },
+      "pitcher_era": {
+        "n": 1008,
+        "mae_marcel": 0.9489,
+        "mae_stan": 0.9465,
+        "delta_mae": 0.0024,
+        "paired_t_stat": 0.6019,
+        "paired_t_p": 0.547348,
+        "wilcoxon_p": 0.701918,
+        "bootstrap_p_stan_better": 0.7328,
+        "cohens_d": 0.019,
+        "stan_win_rate": "501/1008 (49.7%)"
+      }
+    },
+    "team_level_no2021": {
+      "mae_marcel": 11.667,
+      "mae_stan": 11.467,
+      "delta_mae": -0.2,
+      "paired_t_p": 0.05888,
+      "bootstrap_p_stan_better": 0.9731,
+      "n_team_years": 84,
+      "yearly": {
+        "2018": {
+          "marcel": 8.977,
+          "stan": 8.749,
+          "delta": -0.228,
+          "n": 12
+        },
+        "2019": {
+          "marcel": 11.966,
+          "stan": 11.555,
+          "delta": -0.411,
+          "n": 12
+        },
+        "2020": {
+          "marcel": 9.666,
+          "stan": 9.58,
+          "delta": -0.086,
+          "n": 12
+        },
+        "2022": {
+          "marcel": 12.138,
+          "stan": 12.005,
+          "delta": -0.133,
+          "n": 12
+        },
+        "2023": {
+          "marcel": 11.629,
+          "stan": 11.491,
+          "delta": -0.139,
+          "n": 12
+        },
+        "2024": {
+          "marcel": 16.312,
+          "stan": 16.09,
+          "delta": -0.222,
+          "n": 12
+        },
+        "2025": {
+          "marcel": 10.979,
+          "stan": 10.802,
+          "delta": -0.178,
+          "n": 12
+        }
+      }
+    }
+  },
+  "foreign_loocv": {
+    "hitter": {
+      "n": 78,
+      "mae_baseline": 0.0387,
+      "mae_stan": 0.0385,
+      "delta_mae": -0.0002,
+      "paired_t_p": 0.914112,
+      "wilcoxon_p": 0.816845,
+      "bootstrap_p_stan_better": 0.5471,
+      "stan_win_rate": "35/78 (44.9%)",
+      "yearly": {
+        "2015": {
+          "baseline": 0.0377,
+          "stan": 0.0445,
+          "delta": 0.0067,
+          "n": 11
+        },
+        "2016": {
+          "baseline": 0.0263,
+          "stan": 0.0331,
+          "delta": 0.0068,
+          "n": 8
+        },
+        "2017": {
+          "baseline": 0.0524,
+          "stan": 0.059,
+          "delta": 0.0066,
+          "n": 10
+        },
+        "2018": {
+          "baseline": 0.0499,
+          "stan": 0.0369,
+          "delta": -0.013,
+          "n": 4
+        },
+        "2019": {
+          "baseline": 0.0519,
+          "stan": 0.0504,
+          "delta": -0.0015,
+          "n": 4
+        },
+        "2020": {
+          "baseline": 0.0332,
+          "stan": 0.0315,
+          "delta": -0.0017,
+          "n": 8
+        },
+        "2021": {
+          "baseline": 0.0399,
+          "stan": 0.0405,
+          "delta": 0.0007,
+          "n": 6
+        },
+        "2022": {
+          "baseline": 0.0392,
+          "stan": 0.0355,
+          "delta": -0.0037,
+          "n": 7
+        },
+        "2023": {
+          "baseline": 0.0221,
+          "stan": 0.0202,
+          "delta": -0.0019,
+          "n": 8
+        },
+        "2024": {
+          "baseline": 0.0475,
+          "stan": 0.033,
+          "delta": -0.0145,
+          "n": 5
+        },
+        "2025": {
+          "baseline": 0.0379,
+          "stan": 0.0341,
+          "delta": -0.0038,
+          "n": 7
+        }
+      }
+    },
+    "pitcher": {
+      "n": 91,
+      "mae_baseline": 0.8457,
+      "mae_stan": 0.8733,
+      "delta_mae": 0.0276,
+      "paired_t_p": 0.288859,
+      "wilcoxon_p": 0.346202,
+      "bootstrap_p_stan_better": 0.1388,
+      "stan_win_rate": "42/91 (46.2%)",
+      "yearly": {
+        "2015": {
+          "baseline": 0.75,
+          "stan": 0.8205,
+          "delta": 0.0705,
+          "n": 11
+        },
+        "2016": {
+          "baseline": 1.1447,
+          "stan": 1.1314,
+          "delta": -0.0133,
+          "n": 10
+        },
+        "2017": {
+          "baseline": 0.8254,
+          "stan": 0.9644,
+          "delta": 0.139,
+          "n": 11
+        },
+        "2018": {
+          "baseline": 0.825,
+          "stan": 0.7682,
+          "delta": -0.0568,
+          "n": 11
+        },
+        "2019": {
+          "baseline": 1.3932,
+          "stan": 1.2594,
+          "delta": -0.1338,
+          "n": 4
+        },
+        "2020": {
+          "baseline": 1.44,
+          "stan": 1.279,
+          "delta": -0.161,
+          "n": 2
+        },
+        "2021": {
+          "baseline": 0.8925,
+          "stan": 1.1745,
+          "delta": 0.282,
+          "n": 4
+        },
+        "2022": {
+          "baseline": 0.4292,
+          "stan": 0.4406,
+          "delta": 0.0114,
+          "n": 10
+        },
+        "2023": {
+          "baseline": 0.8578,
+          "stan": 0.8498,
+          "delta": -0.0081,
+          "n": 8
+        },
+        "2024": {
+          "baseline": 0.558,
+          "stan": 0.528,
+          "delta": -0.03,
+          "n": 10
+        },
+        "2025": {
+          "baseline": 1.035,
+          "stan": 1.1296,
+          "delta": 0.0946,
+          "n": 10
+        }
+      }
+    }
+  },
+  "ridge_alphas": {
+    "jpn_hitter": 1.124,
+    "jpn_pitcher": 4.84,
+    "fgn_hitter": 6.25,
+    "fgn_pitcher": 4.0
+  }
+}
