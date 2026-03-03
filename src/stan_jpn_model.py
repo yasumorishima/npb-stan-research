@@ -132,12 +132,19 @@ def compute_marcel_era(pitchers_df: pd.DataFrame, target_year: int) -> pd.DataFr
 
 def add_kpct_bbpct_hitter(saber_df: pd.DataFrame, target_year: int,
                            marcel_df: pd.DataFrame) -> pd.DataFrame:
-    """Add K%/BB% features from the year before the target year."""
-    prev = saber_df[saber_df["year"] == target_year - 1][["player", "PA", "SO", "BB"]].copy()
+    """Add K%/BB%/BABIP features from the year before the target year.
+
+    BABIP = (H - HR) / (AB - SO - HR + SF) captures luck in year t-1.
+    High BABIP in t-1 → Marcel overestimates year t → expected delta_BABIP < 0.
+    """
+    cols = ["player", "PA", "SO", "BB", "AB", "H", "HR", "SF"]
+    prev = saber_df[saber_df["year"] == target_year - 1][cols].copy()
     prev = prev[prev["PA"] >= MIN_PA]
     prev["K_pct"]  = prev["SO"] / prev["PA"]
     prev["BB_pct"] = prev["BB"] / prev["PA"]
-    merged = marcel_df.merge(prev[["player", "K_pct", "BB_pct"]], on="player", how="inner")
+    denom = (prev["AB"] - prev["SO"] - prev["HR"] + prev["SF"]).clip(lower=1)
+    prev["BABIP"]  = (prev["H"] - prev["HR"]) / denom
+    merged = marcel_df.merge(prev[["player", "K_pct", "BB_pct", "BABIP"]], on="player", how="inner")
     return merged
 
 
@@ -247,7 +254,7 @@ def main(draws=1000, warmup=500):
         return
 
     # ── Standardize ───────────────────────────────────────────────────────────
-    feat_cols_h = ["K_pct", "BB_pct"]
+    feat_cols_h = ["K_pct", "BB_pct", "BABIP"]
     feat_cols_p = ["K_pct", "BB_pct"]
 
     train_z_h, test_z_h, h_means, h_stds = standardize_features(train_h, test_h, feat_cols_h)
@@ -256,23 +263,26 @@ def main(draws=1000, warmup=500):
     # ── Stan: Hitters ─────────────────────────────────────────────────────────
     print("\nRunning Stan model — hitters...")
     stan_data_h = {
-        "N":                len(train_h),
-        "marcel_woba":      train_h["marcel_woba"].tolist(),
-        "z_K":              train_z_h[:, 0].tolist(),
-        "z_BB":             train_z_h[:, 1].tolist(),
-        "actual_woba":      train_h["actual_woba"].tolist(),
-        "N_pred":           len(test_h),
-        "marcel_woba_pred": test_h["marcel_woba"].tolist(),
-        "z_K_pred":         test_z_h[:, 0].tolist(),
-        "z_BB_pred":        test_z_h[:, 1].tolist(),
+        "N":                  len(train_h),
+        "marcel_woba":        train_h["marcel_woba"].tolist(),
+        "z_K":                train_z_h[:, 0].tolist(),
+        "z_BB":               train_z_h[:, 1].tolist(),
+        "z_babip":            train_z_h[:, 2].tolist(),
+        "actual_woba":        train_h["actual_woba"].tolist(),
+        "N_pred":             len(test_h),
+        "marcel_woba_pred":   test_h["marcel_woba"].tolist(),
+        "z_K_pred":           test_z_h[:, 0].tolist(),
+        "z_BB_pred":          test_z_h[:, 1].tolist(),
+        "z_babip_pred":       test_z_h[:, 2].tolist(),
     }
     fit_h = run_stan_model(ROOT / "models" / "hitter_jpn.stan", stan_data_h, draws, warmup)
 
     # posterior means of test predictions
     stan_pred_h = fit_h.stan_variable("stan_pred").mean(axis=0)
-    delta_K_h   = float(fit_h.stan_variable("delta_K").mean())
-    delta_BB_h  = float(fit_h.stan_variable("delta_BB").mean())
-    print(f"  delta_K={delta_K_h:+.4f}  delta_BB={delta_BB_h:+.4f}")
+    delta_K_h     = float(fit_h.stan_variable("delta_K").mean())
+    delta_BB_h    = float(fit_h.stan_variable("delta_BB").mean())
+    delta_BABIP_h = float(fit_h.stan_variable("delta_BABIP").mean())
+    print(f"  delta_K={delta_K_h:+.4f}  delta_BB={delta_BB_h:+.4f}  delta_BABIP={delta_BABIP_h:+.4f}")
 
     test_h = test_h.copy()
     test_h["stan_woba"] = stan_pred_h
@@ -324,9 +334,10 @@ def main(draws=1000, warmup=500):
             "mae_marcel": round(mae_marcel_h, 4),
             "mae_stan":   round(mae_stan_h, 4),
             "delta_mae":  round(mae_stan_h - mae_marcel_h, 4),
-            "delta_K":    round(delta_K_h, 4),
-            "delta_BB":   round(delta_BB_h, 4),
-            "n_test":     len(test_h),
+            "delta_K":     round(delta_K_h, 4),
+            "delta_BB":    round(delta_BB_h, 4),
+            "delta_BABIP": round(delta_BABIP_h, 4),
+            "n_test":      len(test_h),
             "feature_means": h_means,
             "feature_stds":  h_stds,
         },
