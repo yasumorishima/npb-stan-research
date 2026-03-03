@@ -62,7 +62,8 @@ def league_avg_woba(saber_df: pd.DataFrame, year: int) -> float:
 def league_avg_era(pitchers_df: pd.DataFrame, year: int) -> float:
     sub = pitchers_df[pitchers_df["year"] == year - 1].copy()
     sub["IP_dec"] = sub["IP"].apply(ip_to_decimal)
-    sub = sub[sub["IP_dec"] >= MIN_IP]
+    sub["ERA"]    = pd.to_numeric(sub["ERA"], errors="coerce")
+    sub = sub[(sub["IP_dec"] >= MIN_IP) & sub["ERA"].notna()]
     if len(sub) == 0:
         return 3.80
     total_ip = sub["IP_dec"].sum()
@@ -111,8 +112,9 @@ def compute_marcel_era(pitchers_df: pd.DataFrame, target_year: int) -> pd.DataFr
             if len(row) == 0:
                 continue
             ip  = ip_to_decimal(float(row.iloc[0]["IP"]))
-            era = float(row.iloc[0]["ERA"])
+            era = pd.to_numeric(row.iloc[0]["ERA"], errors="coerce")
             if ip >= MIN_IP and not np.isnan(era):
+                era = float(era)
                 w_total += w * ip
                 era_sum += w * ip * era
         if w_total == 0:
@@ -165,9 +167,9 @@ def add_actual_woba(saber_df: pd.DataFrame, target_year: int,
 def add_actual_era(pitchers_df: pd.DataFrame, target_year: int,
                    df: pd.DataFrame) -> pd.DataFrame:
     actual = pitchers_df[pitchers_df["year"] == target_year][["player", "IP", "ERA"]].copy()
-    actual["actual_IP"] = actual["IP"].apply(ip_to_decimal)
-    actual = actual.rename(columns={"ERA": "actual_era"})
-    actual = actual[actual["actual_IP"] >= MIN_IP]
+    actual["actual_IP"]  = actual["IP"].apply(ip_to_decimal)
+    actual["actual_era"] = pd.to_numeric(actual["ERA"], errors="coerce")
+    actual = actual[(actual["actual_IP"] >= MIN_IP) & actual["actual_era"].notna()]
     return df.merge(actual[["player", "actual_IP", "actual_era"]], on="player", how="inner")
 
 
