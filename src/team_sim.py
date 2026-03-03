@@ -28,7 +28,9 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 N_SIM = 10_000
 NPB_GAMES = 143
 NPB_PYTH_EXP = 1.83          # Pythagorean exponent for NPB
+NPB_TARGET_PA = 5_300        # normalize each team to this many PA (≈143g × 37PA/g)
 NPB_TARGET_IP = 1_287        # 143 games x 9 innings = total IP per team season
+NPB_HIST_RS   = 535.0        # historical NPB avg RS per team (2015-2024)
 
 # ── Uncertainty parameters ─────────────────────────────────────────────────────
 # sigma from Marcel backtest (npb-prediction 2025 backtest):
@@ -36,9 +38,9 @@ SIGMA_OPS = 0.063            # Marcel OPS MAE -> per-player sigma
 SIGMA_ERA = 0.78             # Marcel ERA MAE -> per-player sigma
 
 # ── RS calibration ─────────────────────────────────────────────────────────────
-# Calibrated from: NPB historical avg RS=535, avg team weighted OPS*PA=4039
-# RS ≈ K_HIT * sum_i(OPS_i * PA_i)
-K_HIT = 0.1326
+# After normalizing PA to NPB_TARGET_PA, avg OPS×PA = 0.6734 × 5300 = 3569
+# K_HIT = NPB_HIST_RS / avg_OPS_PA = 535 / 3569 = 0.1499
+K_HIT = 0.1499
 
 # ── League structure ───────────────────────────────────────────────────────────
 LEAGUES: dict[str, list[str]] = {
@@ -61,6 +63,16 @@ def load_marcel() -> tuple[pd.DataFrame, pd.DataFrame]:
     hitters = pd.read_csv(f"{NPBP_BASE}/marcel_hitters_2026.csv", encoding="utf-8-sig")
     pitchers = pd.read_csv(f"{NPBP_BASE}/marcel_pitchers_2026.csv", encoding="utf-8-sig")
     return hitters, pitchers
+
+
+def normalize_hitter_pa(hitters: pd.DataFrame) -> pd.DataFrame:
+    """Scale each team's total projected PA to NPB_TARGET_PA (≈ 143g × 37PA/g)."""
+    hitters = hitters.copy()
+    for team, grp in hitters.groupby("team"):
+        total_pa = grp["PA"].sum()
+        if total_pa > 0:
+            hitters.loc[hitters["team"] == team, "PA"] *= NPB_TARGET_PA / total_pa
+    return hitters
 
 
 def normalize_pitcher_ip(pitchers: pd.DataFrame) -> pd.DataFrame:
@@ -97,16 +109,29 @@ def simulate(
     p_teams = pitchers["team"].values
     all_teams = sorted(set(hitters["team"].unique()) | set(pitchers["team"].unique()))
 
-    wins_sim: dict[str, np.ndarray] = {}
+    # Compute raw RS / RA per team per simulation
+    rs_raw: dict[str, np.ndarray] = {}
+    ra_raw: dict[str, np.ndarray] = {}
     for team in all_teams:
         h_mask = h_teams == team
         p_mask = p_teams == team
         if not h_mask.any() or not p_mask.any():
             continue
+        rs_raw[team] = K_HIT * (ops_sim[h_mask] * pa[h_mask]).sum(axis=0)
+        ra_raw[team] = (era_sim[p_mask] * ip[p_mask]).sum(axis=0) / 9.0
 
-        rs = K_HIT * (ops_sim[h_mask] * pa[h_mask]).sum(axis=0)
-        ra = (era_sim[p_mask] * ip[p_mask]).sum(axis=0) / 9.0
+    # Post-hoc calibration: scale league-avg RS and RA to NPB_HIST_RS
+    # This corrects Marcel's systematic optimism (OPS high / ERA low)
+    valid_teams = list(rs_raw.keys())
+    rs_matrix = np.stack([rs_raw[t] for t in valid_teams])  # (T, n_sim)
+    ra_matrix = np.stack([ra_raw[t] for t in valid_teams])  # (T, n_sim)
+    scale_rs = NPB_HIST_RS / rs_matrix.mean(axis=0)  # (n_sim,)
+    scale_ra = NPB_HIST_RS / ra_matrix.mean(axis=0)  # (n_sim,)
 
+    wins_sim: dict[str, np.ndarray] = {}
+    for i, team in enumerate(valid_teams):
+        rs = rs_matrix[i] * scale_rs
+        ra = ra_matrix[i] * scale_ra
         rs_exp = np.power(np.clip(rs, 1.0, None), NPB_PYTH_EXP)
         ra_exp = np.power(np.clip(ra, 1.0, None), NPB_PYTH_EXP)
         wpct   = rs_exp / (rs_exp + ra_exp)
@@ -147,6 +172,7 @@ def main(n_sim: int = N_SIM) -> None:
     print(f"  Hitters : {len(hitters):3d} players / {hitters['team'].nunique()} teams")
     print(f"  Pitchers: {len(pitchers):3d} players / {pitchers['team'].nunique()} teams")
 
+    hitters  = normalize_hitter_pa(hitters)
     pitchers = normalize_pitcher_ip(pitchers)
 
     print(f"Running {n_sim:,} simulations...")
