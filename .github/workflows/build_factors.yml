@@ -14,6 +14,7 @@ on:
           - run_model
           - run_stan_model
           - identify
+          - patch_conflicts
 
 permissions:
   contents: write
@@ -31,9 +32,13 @@ jobs:
       - name: Install base dependencies
         run: pip install -r requirements.txt
 
-      - name: Install pybaseball (fetch_stats only)
-        if: inputs.step == 'fetch_stats'
+      - name: Install pybaseball (fetch_stats / patch_conflicts)
+        if: inputs.step == 'fetch_stats' || inputs.step == 'patch_conflicts'
         run: pip install pybaseball
+
+      - name: Install pykakasi (patch_conflicts only)
+        if: inputs.step == 'patch_conflicts'
+        run: pip install pykakasi
 
       - name: Install PyMC + ArviZ (run_model only)
         if: inputs.step == 'run_model'
@@ -64,6 +69,10 @@ jobs:
       - name: Run Stan model
         if: inputs.step == 'run_stan_model'
         run: python src/stan_model.py --draws 2000 --warmup 1000
+
+      - name: Patch master conflicts (detect same-katakana different-player)
+        if: inputs.step == 'patch_conflicts'
+        run: python scripts/patch_master_conflicts.py
 
       - name: Commit results to repo
         run: |
