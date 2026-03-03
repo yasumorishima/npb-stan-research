@@ -1,0 +1,34 @@
+{
+  "hitter": {
+    "mae_marcel": 0.0378,
+    "mae_stan": 0.0382,
+    "delta_mae": 0.0004,
+    "delta_K": -0.0027,
+    "delta_BB": -0.003,
+    "n_test": 678,
+    "feature_means": {
+      "K_pct": 0.19469803326594193,
+      "BB_pct": 0.08478999831532072
+    },
+    "feature_stds": {
+      "K_pct": 0.05915176194804566,
+      "BB_pct": 0.03515405861307282
+    }
+  },
+  "pitcher": {
+    "mae_marcel": 0.9368,
+    "mae_stan": 0.9331,
+    "delta_mae": -0.0037,
+    "delta_K": -0.1336,
+    "delta_BB": -0.0685,
+    "n_test": 582,
+    "feature_means": {
+      "K_pct": 0.20304112145970543,
+      "BB_pct": 0.08637173608268964
+    },
+    "feature_stds": {
+      "K_pct": 0.05133268651904123,
+      "BB_pct": 0.0276031735109707
+    }
+  }
+}
