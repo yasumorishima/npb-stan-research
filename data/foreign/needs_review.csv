@@ -1,0 +1,130 @@
+npb_name,conflict_team,conflict_first_year,player_type,romaji,fg_candidates,reason,master_english,same_year_conflict,no_recent,npb_first_year_PA,npb_first_year_wOBA,npb_first_year_ERA,npb_first_year_IP
+アルカンタラ,日本ハム,2022,pitcher,arukantara,,no_match,Raúl Alcántara,True,False,285,0.2983142729272965,,
+アンダーソン,巨人,2015,pitcher,andaason,,no_match,Leslie Anderson,False,True,260,0.33832634828654173,,
+イ・デウン,ロッテ,2015,pitcher,i・deun,,no_match,Lee Dae-eun,False,True,,,3.84,119.2
+エスコバー,日本ハム,2017,pitcher,esukobaa,,no_match,Edwin Escobar,True,True,,,5.64,22.1
+エスコバー,ヤクルト,2020,pitcher,esukobaa,,no_match,Edwin Escobar,True,False,402,0.294205670845494,,
+エリアン,DeNA,2016,hitter,erian,Robbie Erlin,same_player_team_change,Elian Herrera,False,True,274,0.27408190804227234,,
+エルナンデス,中日,2015,hitter,erunandesu,,no_match,Anderson Hernandez,False,True,548,0.32831778110052195,,
+エレラ,DeNA,2015,pitcher,erera,,no_match,Yoslan Herrera,False,True,,,2.96,51.2
+オスナ,ロッテ,2022,hitter,osuna,Roberto Osuna (2020); Jose Osuna (2020),2_candidates,Jose Osuna,True,False,,,0.91,29.2
+オスナ,ソフトバンク,2023,hitter,osuna,Roberto Osuna (2020); Jose Osuna (2020),2_candidates,Jose Osuna,True,False,,,0.92,49.0
+オンドルセク,ヤクルト,2015,pitcher,ondoruseku,,no_match,Logan Ondrusek,False,True,,,2.05,70.1
+オーレンドルフ,ヤクルト,2017,pitcher,oorendorufu,,no_match,Ross Ohlendorf,False,True,,,5.50,18.0
+カスティーヨ,楽天,2021,pitcher,kasuteiiyo,,no_match,Fabio Castillo,False,True,76,0.2596053037778181,,
+カスティーヨ,ロッテ,2023,pitcher,kasuteiiyo,,no_match,Fabio Castillo,False,True,,,3.12,49.0
+カニザレス,ソフトバンク,2015,hitter,kanizaresu,,no_match,Bárbaro Cañizares,False,True,36,0.3885815192001388,,
+カラバイヨ,オリックス,2015,hitter,karabaiyo,,no_match,Francisco Caraballo,False,True,247,0.35083403083836134,,
+カルロス・ロサ,ロッテ,2015,pitcher,karurosu・rosa,,no_match,Carlos Rosa,False,True,,,4.97,29.0
+ガラテ,日本ハム,2015,pitcher,garate,,no_match,Victor Garate,False,True,,,1.71,26.1
+ガルシア,西武,2024,pitcher,garushia,,no_match,Guillermo García García,False,True,69,0.24047309099677375,,
+ガルセス,西武,2017,pitcher,garusesu,,no_match,Frank Garces,False,True,,,6.39,31.0
+キャンベル,阪神,2017,hitter,kyanberu,,no_match,Eric Campbell,False,True,54,0.28047504662228817,,
+ギャレット,巨人,2016,pitcher,gyaretto,,no_match,Reed Garrett,False,True,465,0.3684662872241937,,
+ギルメット,ヤクルト,2017,pitcher,girumetto,,no_match,Preston Guilmet,False,True,,,3.62,54.2
+クライン,DeNA,2017,pitcher,kurain,,no_match,Phil Klein,False,True,,,4.75,36.0
+クラーク,オリックス,2016,hitter,kuraaku,,no_match,Matt Clark,False,True,34,0.32755109166188573,,
+クルーズ,ロッテ,2015,hitter,kuruuzu,,no_match,Luis Cruz,True,True,532,0.31465419570862163,,
+クルーズ,楽天,2015,hitter,kuruuzu,,no_match,Luis Cruz,True,True,,,3.12,49.0
+クロッタ,日本ハム,2015,pitcher,kurotta,,no_match,Michael Crotta,False,True,,,6.59,28.2
+グスマン,広島,2015,hitter,gusuman,,no_match,Jesus Guzman,False,True,116,0.3504996477257704,,
+ケラー,巨人,2024,pitcher,keraa,,no_match,Kyle Keller,False,True,,,1.53,47.0
+ゲレーロ,中日,2017,hitter,gereero,Alex Guerrero (2015); Tayron Guerrero (2016),2_candidates,Alex Guerrero,False,True,510,0.39490439146597045,,
+ゲレーロ,ロッテ,2022,hitter,gereero,Tayron Guerrero (2019); Gabriel Guerrero (2018); Mike Gerber (2019); Joey Gerber (2020),4_candidates,Alex Guerrero,False,True,,,3.52,46.0
+コルデロ,西武,2024,hitter,korudero,Franchy Cordero (2023); Jimmy Cordero (2023),2_candidates,Remy Moise Cordero,False,True,73,0.16297273229450704,,
+コーク,オリックス,2017,pitcher,kooku,,no_match,Phil Coke,False,True,,,4.56,23.2
+コーディエ,オリックス,2016,pitcher,koodie,,no_match,Erik Cordier,False,True,,,7.3,12.1
+ゴメス,阪神,2015,hitter,gomesu,,no_match,Mauro Gomez,False,True,601,0.3654138265233264,,
+ゴームズ,楽天,2016,hitter,goomuzu,,no_match,Jonny Gomes,False,True,75,0.25916202228668744,,
+サターホワイト,阪神,2016,pitcher,sataahowaito,,no_match,Cody Satterwhite,False,True,,,2.57,21.0
+サンタナ,ヤクルト,2021,hitter,santana,Carlos Santana (2020); Domingo Santana (2020); Ervin Santana (2019); Danny Santana (2020); Edgar Santana (2018),6_candidates,Juan Daniel Santana,False,True,418,0.39166705242033034,,
+サンチェス,楽天,2015,pitcher,sanchesu,,no_match,Angel Sánchez,False,True,232,0.33547049723740036,,
+サンティアゴ,阪神,2015,pitcher,santeiago,,no_match,Mario Santiago,False,True,,,4.32,16.2
+ザガースキー,広島,2015,pitcher,zagaasukii,,no_match,Mike Zagurski,False,True,,,2.40,15.0
+シアーホルツ,広島,2015,hitter,shiaahorutsu,,no_match,Nate Schierholtz,False,True,248,0.33510652478539105,,
+シュリッター,西武,2017,pitcher,shurittaa,,no_match,Brian Schlitter,False,True,,,2.83,63.2
+ジェフン,ヤクルト,2016,hitter,jiefun,,no_match,Ha Jae-hoon,False,True,42,0.25026375542705875,,
+ジャクソン,DeNA,2024,pitcher,jakuson,Edwin Jackson (2019); Luke Jackson (2023); Jay Jackson (2023); Andre Jackson (2023); Zach Jackson (2023),5_candidates,Jay Jackson,False,True,51,0.11997395830776944,,
+ジョンソン,阪神,2019,pitcher,jonson,Jim Johnson (2018); Erik Johnson (2016); Brian Johnson (2018); Steve Johnson (2016); Pierce Johnson (2018),6_candidates,Kris Johnson,True,False,,,1.38,58.2
+スアレス,ヤクルト,2019,pitcher,suaresu,Albert Suarez (2017); Andrew Suarez (2018); Ranger Suarez (2018),3_candidates,Robert Suarez,True,False,,,1.53,17.2
+スアレス,阪神,2020,pitcher,suaresu,Albert Suarez (2017); Andrew Suarez (2019); Ranger Suarez (2019); Jose Suarez (2019),4_candidates,Robert Suarez,True,False,,,2.24,52.1
+スタンリッジ,ソフトバンク,2015,pitcher,sutanrijji,,no_match,Jason Standridge,False,True,,,3.74,144.1
+セラテリ,西武,2015,hitter,serateri,,no_match,Anthony Seratelli,False,True,74,0.2841448571002901,,
+ダフィー,ロッテ,2017,hitter,dafii,,no_match,Matt Duffy,False,True,183,0.29603950239094706,,
+ディアス,オリックス,2025,hitter,diasu,,no_match,Yofrec Diaz,False,True,138,0.2808690609684674,,
+ディクソン,楽天,2018,pitcher,dikuson,,no_match,Brandon Dickson,True,False,60,0.20679274838474526,,
+デイビーズ,ヤクルト,2016,pitcher,deibiizu,,no_match,Kyle Davies,False,True,,,4.39,82.0
+デスパイネ,ロッテ,2015,hitter,desupaine,,no_match,Alfredo Despaigne,False,True,409,0.37313281101180185,,
+デニング,ヤクルト,2015,hitter,deningu,,no_match,Mitchell Dening,False,True,227,0.318412567508336,,
+ドレイク,日本ハム,2017,hitter,doreiku,,no_match,Yadir Drake,False,True,86,0.25682537300248537,,
+ナニータ,中日,2015,hitter,naniita,,no_match,Ricardo Nanita,False,True,169,0.3401127058824568,,
+ナバーロ,ロッテ,2016,hitter,nabaaro,,no_match,Efren Navarro,False,True,340,0.3200983842392417,,
+ネイラー,中日,2015,pitcher,neiraa,,no_match,Drew Naylor,False,True,,,3.81,52.0
+ハーミッダ,日本ハム,2015,hitter,haamidda,,no_match,Jeremy Hermida,False,True,192,0.293835688452051,,
+バスケス,西武,2015,pitcher,basukesu,,no_match,Esmerling Vasquez,False,True,,,3.63,34.2
+バリオス,ソフトバンク,2015,pitcher,bariosu,,no_match,Edison Barrios,False,True,,,3.18,34.0
+バリントン,オリックス,2015,pitcher,barinton,,no_match,Bryan Bullington,False,True,,,3.30,73.2
+バルガス,オリックス,2022,pitcher,barugasu,,no_match,Kennys Vargas,False,True,,,6.59,13.2
+バルディリス,DeNA,2015,hitter,barudirisu,,no_match,Aarom Baldiris,False,True,525,0.33654018246277884,,
+バルデス,中日,2015,pitcher,barudesu,,no_match,Raul Valdes,False,True,45,0.1410062279253198,,
+バンヘッケン,西武,2016,pitcher,banhekken,,no_match,Andy Van Hekken,False,True,,,6.31,45.2
+バース,日本ハム,2016,pitcher,baasu,,no_match,Anthony Bass,False,True,,,3.65,103.2
+バーネット,ヤクルト,2015,pitcher,baanetto,,no_match,Tony Barnette,False,True,,,1.29,62.2
+パラデス,ロッテ,2017,hitter,paradesu,Jimmy Paredes,same_player_team_change,Jimmy Paredes,False,True,289,0.2871909197109602,,
+ヒース,広島,2015,pitcher,hiisu,,no_match,Deunte Heath,False,True,,,2.36,49.2
+ファイフ,西武,2017,pitcher,faifu,,no_match,Stephen Fife,False,True,,,6.86,21.0
+フェリス,中日,2023,pitcher,ferisu,,no_match,Daritzon Feliz,False,True,,,3.14,14.1
+ブランコ,オリックス,2015,hitter,buranko,,no_match,Tony Blanco,False,True,189,0.30326421957535776,,
+ブレイシア,広島,2017,pitcher,bureishia,,no_match,Ryan Brasier,False,True,,,3.00,30.0
+ヘイグ,阪神,2016,hitter,heigu,,no_match,Matt Hague,False,True,124,0.3227527867369124,,
+ヘルナンデス,巨人,2024,hitter,herunandesu,Enrique Hernandez (2023); Cesar Hernandez (2022); Teoscar Hernandez (2023); Gorkys Hernandez (2019); David Hernandez (2019),18_candidates,Darwinzon Hernandez,True,True,240,0.3674386106785094,,
+ヘルナンデス,阪神,2025,hitter,herunandesu,Cesar Hernandez (2022); Teoscar Hernandez (2024); Enrique Hernandez (2024); David Hernandez (2019); Felix Hernandez (2019),18_candidates,Darwinzon Hernandez,True,False,101,0.2534626503593878,,
+ヘルマン,オリックス,2015,hitter,heruman,,no_match,Esteban German,False,True,245,0.3143792117453988,,
+ヘルメン,オリックス,2017,pitcher,herumen,Gonzalez Germen,same_player_team_change,Gonzalez Germen,False,True,,,2.68,47.0
+ヘーゲンズ,広島,2016,pitcher,heegenzu,,no_match,Bradin Hagens,False,True,,,2.92,83.1
+ペゲーロ,楽天,2016,hitter,pegeero,Carlos Peguero,same_player_team_change,Carlos Peguero,False,True,200,0.37685550504724596,,
+ペトリック,DeNA,2016,pitcher,petorikku,,no_match,Zach Petrick,False,True,,,5.51,47.1
+ペレス,ヤクルト,2016,pitcher,peresu,,no_match,Nelson Perez,True,True,,,8.02,21.1
+ペレス,楽天,2016,pitcher,peresu,,no_match,Nelson Perez,True,True,93,0.32303310008304487,,
+ペーニャ,楽天,2015,hitter,peenya,,no_match,Wily Mo Pena,False,True,492,0.3937601468658335,,
+ペーニャ,ロッテ,2017,hitter,peenya,Francisco Pena (2016); Ariel Pena (2016); Brayan Pena (2016); Ramiro Pena (2016); Felix Pena (2016),5_candidates,Wily Mo Pena,True,True,252,0.37462773539641414,,
+ペーニャ,広島,2017,hitter,peenya,Francisco Pena (2016); Ariel Pena (2016); Brayan Pena (2016); Ramiro Pena (2016); Felix Pena (2016),5_candidates,Wily Mo Pena,True,True,39,0.23195688601492806,,
+ボグセビック,オリックス,2016,hitter,bogusebikku,,no_match,Brian Bogusevic,False,True,193,0.28435624888009714,,
+ポレダ,巨人,2015,pitcher,poreda,,no_match,Aaron Poreda,False,True,44,0.10018613066476086,,
+ポーリーノ,西武,2016,pitcher,pooriino,,no_match,Felipe Paulino,False,True,,,4.7,44.0
+マイコラス,巨人,2015,pitcher,maikorasu,,no_match,Miles Mikolas,False,True,54,0.1597837899609193,,
+マエストリ,オリックス,2015,pitcher,maesutori,,no_match,Alessandro Maestri,False,True,,,3.19,42.1
+マルテ,中日,2025,hitter,marute,Ketel Marte (2024); Starling Marte (2024); German Marquez (2024); Brailyn Marquez (2020); Luis Marte (2021),8_candidates,Jefry Marte,False,True,,,1.95,32.1
+マルティネス,日本ハム,2018,pitcher,maruteinesu,,no_match,Raidel Martinez,True,True,,,3.51,161.2
+マルティネス,中日,2023,pitcher,maruteinesu,,no_match,Raidel Martinez,True,True,,,0.39,46.2
+マーティン,日本ハム,2016,pitcher,maatein,Chris Martin (2015); Rafael Martin (2015); Cody Martin (2015),3_candidates,,False,True,,,1.07,50.2
+マーティン,ロッテ,2019,pitcher,maatein,Chris Martin (2018); Rafael Martin (2016); Cody Martin (2017); Kyle Martin (2017); Leonys Martin (2017),5_candidates,,True,False,228,0.3733436290256157,,
+マートン,阪神,2015,hitter,maaton,,no_match,Matt Murton,False,True,583,0.31800217443647305,,
+ミコライオ,楽天,2016,pitcher,mikoraio,,no_match,Kam Mickolio,False,True,,,2.38,45.1
+ミレッジ,ヤクルト,2015,hitter,mirejji,,no_match,Lastings Milledge,False,True,81,0.26202752475671365,,
+ムリーロ,楽天,2015,hitter,muriiro,,no_match,Agustin Murillo,False,True,37,0.35770378397967134,,
+メヒア,西武,2015,hitter,mehia,,no_match,Alejandro Mejia,False,True,525,0.35373217234561133,,
+メヒア,中日,2023,hitter,mehia,Adalberto Mejia (2019); Francisco Mejia (2022); Alex Mejia (2017); Erick Mejia (2020); Humberto Mejia (2021),6_candidates,Alejandro Mejia,False,True,,,2.23,44.1
+メンドーサ,日本ハム,2015,pitcher,mendoosa,,no_match,Luis Mendoza,False,True,,,3.51,148.2
+メンドーサ,阪神,2017,pitcher,mendoosa,,no_match,Luis Mendoza,True,False,,,5.14,21.0
+モスコーソ,DeNA,2015,pitcher,mosukooso,,no_match,Guillermo Moscoso,False,True,,,5.19,60.2
+モヤ,中日,2018,hitter,moya,Steven Moya (2016); Gabriel Moya (2017),2_candidates,Steven Moya,False,True,101,0.35104971147382247,,
+ライブリー,日本ハム,2015,pitcher,raiburii,,no_match,Mitch Lively,False,True,,,5.30,18.2
+リズ,楽天,2016,pitcher,rizu,,no_match,Radhames Liz,False,True,,,6.94,11.2
+リベロ,ヤクルト,2017,hitter,ribero,,no_match,Carlos Rivero,False,True,208,0.2660362497306571,,
+ルナ,中日,2015,hitter,runa,,no_match,Hector Luna,False,True,564,0.3549104775711421,,
+ルブラン,西武,2015,pitcher,ruburan,,no_match,Wade LeBlanc,False,True,,,4.23,44.2
+ルーキ,ヤクルト,2016,pitcher,ruuki,,no_match,Josh Lueke,False,True,,,3.06,64.2
+レイ,楽天,2015,pitcher,rei,,no_match,Kenneth Ray,False,True,,,3.79,107.0
+ロサリオ,広島,2015,hitter,rosario,,no_match,Rainel Rosario,False,True,136,0.3145847302541806,,
+ロドリゲス,日本ハム,2018,pitcher,rodorigesu,,no_match,Joely Rodríguez,True,True,,,5.26,37.2
+ロドリゲス,オリックス,2020,pitcher,rodorigesu,,no_match,Joely Rodríguez,True,False,211,0.29363512047632234,,
+ロドリゲス,阪神,2022,pitcher,rodorigesu,,no_match,Joely Rodríguez,True,False,70,0.21897884060584688,,
+ロドリゲス,ヤクルト,2023,pitcher,rodorigesu,,no_match,Joely Rodríguez,True,False,,,4.09,33.0
+ロマック,DeNA,2016,hitter,romakku,Jamie Romak,same_player_team_change,Jamie Romak,False,True,85,0.20156046576796938,,
+ロマン,ヤクルト,2015,pitcher,roman,,no_match,Orlando Roman,False,True,,,2.40,78.2
+ロメロ,中日,2019,hitter,romero,Stefen Romero (2016); Enny Romero (2018); Fernando Romero (2018),3_candidates,Stefen Romero,True,False,38,0.08880143606738469,,
+ロメロ,DeNA,2021,hitter,romero,Stefen Romero (2016); Enny Romero (2018); Fernando Romero (2019); JoJo Romero (2020); Seth Romero (2020),5_candidates,Stefen Romero,True,False,30,0.19838957648798997,,
+ロメロ,ロッテ,2021,hitter,romero,Stefen Romero (2016); Enny Romero (2018); Fernando Romero (2019); JoJo Romero (2020); Seth Romero (2020),5_candidates,Stefen Romero,True,False,,,1.54,23.1
+松元ユウイチ,ヤクルト,2015,hitter,matsumoto yuuichi,,no_match,Yuichi Matsumoto,False,True,51,0.20305061068453883,,
+ＤＪ．ジョンソン,広島,2020,pitcher,D J . jonson,Jim Johnson (2018); Erik Johnson (2016); Brian Johnson (2019); Steve Johnson (2016); Pierce Johnson (2018),6_candidates,DJ Johnson,True,True,,,4.61,13.2

@@ -1,4 +1,4 @@
-﻿npb_name,english_name,origin_league,origin_country,npb_first_year,first_team,player_type,position,mlb_id,npb_first_year_PA,npb_first_year_AVG,npb_first_year_OPS,npb_first_year_wOBA,npb_first_year_ERA,npb_first_year_IP,npb_first_year_WHIP
+npb_name,english_name,origin_league,origin_country,npb_first_year,first_team,player_type,position,mlb_id,npb_first_year_PA,npb_first_year_AVG,npb_first_year_OPS,npb_first_year_wOBA,npb_first_year_ERA,npb_first_year_IP,npb_first_year_WHIP
 アキーノ,Aristides Aquino,MLB,Dominican Republic,2023,中日,hitter,,,68,0.154,0.438,0.1980,,,
 アギラー,Jesús Aguilar,MLB,Venezuela,2024,西武,hitter,内野手,,124,0.204,0.575,0.2741,,,
 アストゥディーヨ,Willians Astudillo,MLB,Venezuela,2023,ソフトバンク,hitter,,,50,0.136,0.447,0.2167,,,
@@ -87,6 +87,7 @@
 グラシアル,Yurisbel Gracial,Cuba,Cuba,2018,ソフトバンク,hitter,,,202,0.292,0.828,0.3673,,,
 グリフィン,Foster Griffin,MLB,USA,2023,巨人,pitcher,投手,,,,,,2.75,121.0,1.07
 グリーン,Rodger Green,AAA,USA,2017,,hitter,,,81,0.194,0.59,0.2765,,,
+グリーン,A.J. Griffin,MLB,,2017,ヤクルト,hitter,,,81,0.194,,0.2764818425686827,,,
 ケイ,Anthony Kay,MLB,USA,2024,DeNA,pitcher,投手,,,,,,3.42,136.2,1.34
 ケラー,Kyle Keller,MLB,USA,2022,阪神,pitcher,投手,,,,,,3.31,32.2,0.92
 ゲラ,Javier Guerra,MLB,Panama,2024,阪神,pitcher,投手,,,,,,1.55,58.0,1.0
@@ -129,6 +130,7 @@
 ジャンセン・ウィティ,Jantzen Witte,AAA,USA,2022,西武,hitter,,,128,0.192,0.51,0.2322,,,
 ジョンソン,Kris Johnson,AAA,USA,2015,広島,pitcher,,,,,,,1.85,194.1,1.10
 ジョーダン,Jordan Norberto,MLB,Dominican Republic,2016,,pitcher,,,,,,,4.24,121.0,1.36
+ジョーダン,Taylor Jordan,MLB,,2016,中日,pitcher,,,41,0.051,,0.0470581420461136,,,
 ジョーンズ,Adam Jones,MLB,USA,2020,オリックス,hitter,,,338,0.258,0.749,0.3406,,,
 ジー,Dillon Gee,MLB,USA,2018,中日,pitcher,,,,,,,4.00,27.0,1.22
 スアレス,Robert Suarez,Independent,Venezuela,2016,ソフトバンク,pitcher,,,,,,,3.19,53.2,1.25
@@ -173,6 +175,7 @@
 トンキン,Michael Tonkin,MLB,USA,2018,日本ハム,pitcher,,,,,,,3.71,51.0,1.33
 トーマス,Cody Thomas,AAA,USA,2024,オリックス,hitter,外野手,,18,0.0,0.0,,,,
 ドミンゲス,Matt Dominguez,MLB,USA,2018,ロッテ,hitter,,,93,0.19,0.757,0.3347,,,
+ドミンゲス,Seranthony Dominguez,MLB,,2025,広島,pitcher,,,,,,,3.71,26.2,1.31
 ドリス,Rafael Dolis,MLB,Dominican Republic,2016,阪神,pitcher,,,,,,,2.12,34.0,1.03
 ドレイク,Yadir Drake,Independent,Cuba,2017,,hitter,,,86,0.232,0.56,0.2568,,,
 ナニータ,Ricardo Nanita,Independent,Dominican Republic,2015,,hitter,,,169,0.308,0.736,0.3401,,,
@@ -247,6 +250,7 @@
 ブラッシュ,Jabari Blash,MLB,USA,2019,楽天,hitter,,,527,0.261,0.936,0.4154,,,
 ブランコ,Tony Blanco,MiLB,Dominican Republic,2015,,hitter,,,189,0.194,0.649,0.3033,,,
 ブリガム,Jake Brigham,MLB,USA,2016,,pitcher,,,,,,,5.24,34.1,1.6
+ブリガム,Jacob Brigham,MLB,,2016,楽天,pitcher,,,,,,,5.24,34.1,1.6
 ブリンソン,Lewis Brinson,MLB,USA,2023,巨人,hitter,,,294,0.248,0.694,0.3117,,,
 ブルワー,Colten Brewer,MLB,USA,2023,阪神,pitcher,,,,,,,2.38,11.1,1.06
 ブレイシア,Ryan Brasier,MLB,USA,2017,,pitcher,,,,,,,3.00,30.0,1.33
@@ -318,6 +322,7 @@
 モヤ,Steven Moya,MLB,Dominican Republic,2018,オリックス,hitter,,,101,0.301,0.787,0.3510,,,
 モレノ,Diego Moreno,MLB,Venezuela,2018,阪神,pitcher,,,,,,,2.70,6.2,1.65
 モレル,Brent Morel,MLB,USA,2016,,hitter,,,348,0.244,0.683,0.3172,,,
+モレル,Justin Morneau,MLB,,2016,オリックス,hitter,,,348,0.244,,0.3171745511488765,,,
 モンティージャ,Emailin Montilla,Independent,Dominican Republic,2019,広島,pitcher,,,,,,,14.54,4.1,3.46
 モンテス,Coco Montes,AAA,USA,2024,巨人,hitter,内野手,,159,0.272,0.699,0.3225,,,
 モンテロ,Elehuris Montero,MLB,Dominican Republic,2025,広島,hitter,,,396,0.255,0.692,0.3163,,,
@@ -341,6 +346,7 @@
 レビーラ,Pedro Revilla,Cuba,Cuba,2022,中日,hitter,,,66,0.203,0.509,0.2319,,,
 ロサリオ,Rainel Rosario,MiLB,Dominican Republic,2015,阪神,hitter,,,136,0.258,0.67,0.3146,,,
 ロジャース,Jason Rogers,MLB,USA,2017,,hitter,,,140,0.252,0.759,0.3408,,,
+ロジャース,Miguel Rojas,MLB,,2017,阪神,hitter,,,140,0.252,,0.3407588455050177,,,
 ロドリゲス,Joely Rodríguez,AAA,Dominican Republic,2018,中日,pitcher,投手,,,,,,2.30,27.1,1.32
 ロハス・ジュニア,Mel Rojas Jr.,KBO,Dominican Republic,2021,阪神,hitter,,,206,0.217,0.663,0.3016,,,
 ロペス,Jose Lopez,MLB,Dominican Republic,2015,DeNA,hitter,投手,,565,0.291,0.843,0.3824,,,
