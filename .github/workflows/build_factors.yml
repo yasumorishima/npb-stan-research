@@ -19,6 +19,7 @@ on:
           - team_backtest
           - run_jpn_model
           - team_compare
+          - statistical_validation
 
 permissions:
   contents: write
@@ -93,6 +94,10 @@ jobs:
       - name: Run team-level Marcel vs Stan comparison
         if: inputs.step == 'team_compare'
         run: python src/team_compare.py
+
+      - name: Run statistical validation (LOO-CV + significance tests)
+        if: inputs.step == 'statistical_validation'
+        run: python src/statistical_validation.py
 
       - name: Commit results to repo
         run: |

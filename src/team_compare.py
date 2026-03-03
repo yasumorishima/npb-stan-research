@@ -1,18 +1,14 @@
 """
-Step 7b: Team-level Marcel vs Stan comparison (2022-2025).
+Marcel vs Stan full comparison (2022-2025).
+
+Compares Marcel and Stan predictions at two levels:
+  1. Player-level: wOBA MAE (hitters) and ERA MAE (pitchers)
+  2. Team-level:   Pythagorean win MAE via RS/RA aggregation
 
 Uses actual player PA/IP weights and Stan predictions for ALL players
-(Japanese + foreign first-year) to compare team RS/RA, and then
-converts to team win predictions via Pythagorean expectation.
+(Japanese + foreign first-year).
 
-Method:
-  Marcel team RS  = K_WOBA × Σ_player(Marcel_wOBA × actual_PA)
-  Stan   team RS  = K_WOBA × Σ_player(Stan_wOBA   × actual_PA)
-
-  Marcel team RA  = Σ_player(Marcel_ERA × actual_IP / 9)
-  Stan   team RA  = Σ_player(Stan_ERA   × actual_IP / 9)
-
-  Pythagorean wins → compare MAE vs actual W
+Scaling: Marcel-anchored (both models calibrated using Marcel's league avg).
 
 Output:
   data/projections/team_compare_results.json
@@ -77,25 +73,25 @@ def load_player_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
     # For foreign hitters: baseline_pred → marcel_woba, stan_pred → stan_woba
     # Note: foreign model predicts wOBA (same metric as jpn model)
     fgn_h = fgn_h.rename(columns={"baseline_pred": "marcel_woba", "stan_pred": "stan_woba",
-                                    "npb_name": "player"})
+                                    "npb_name": "player", "actual_wOBA": "actual_woba"})
     fgn_h = fgn_h.merge(
         raw_h[["player", "year", "team", "PA"]],
         on=["player", "year"], how="inner"
     )
-    fgn_h = fgn_h[["year", "player", "team", "marcel_woba", "stan_woba", "PA"]]
+    fgn_h = fgn_h[["year", "player", "team", "marcel_woba", "stan_woba", "actual_woba", "PA"]]
     fgn_h["actual_PA"] = fgn_h["PA"]
     fgn_h = fgn_h.drop(columns=["PA"])
 
     # For foreign pitchers: baseline_pred → marcel_era, stan_pred → stan_era
     fgn_p = fgn_p.rename(columns={"baseline_pred": "marcel_era", "stan_pred": "stan_era",
-                                    "npb_name": "player"})
+                                    "npb_name": "player", "actual_ERA": "actual_era"})
     raw_p_dec = raw_p.copy()
     raw_p_dec["actual_IP"] = raw_p_dec["IP"].apply(ip_to_decimal)
     fgn_p = fgn_p.merge(
         raw_p_dec[["player", "year", "team", "actual_IP"]],
         on=["player", "year"], how="inner"
     )
-    fgn_p = fgn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_IP"]]
+    fgn_p = fgn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_era", "actual_IP"]]
 
     # Filter to comparison years
     jpn_h = jpn_h[jpn_h["year"].isin(COMPARE_YEARS)]
@@ -114,13 +110,13 @@ def load_player_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     # Combine Japanese + Foreign
     all_h = pd.concat([
-        jpn_h[["year", "player", "team", "marcel_woba", "stan_woba", "actual_PA"]],
-        fgn_h[["year", "player", "team", "marcel_woba", "stan_woba", "actual_PA"]],
+        jpn_h[["year", "player", "team", "marcel_woba", "stan_woba", "actual_woba", "actual_PA"]],
+        fgn_h[["year", "player", "team", "marcel_woba", "stan_woba", "actual_woba", "actual_PA"]],
     ], ignore_index=True)
 
     all_p = pd.concat([
-        jpn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_IP"]],
-        fgn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_IP"]],
+        jpn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_era", "actual_IP"]],
+        fgn_p[["year", "player", "team", "marcel_era", "stan_era", "actual_era", "actual_IP"]],
     ], ignore_index=True)
 
     print(f"  All hitters: {len(all_h)} player-years  "
@@ -161,7 +157,42 @@ def run_comparison() -> None:
     print("Loading player predictions...")
     all_h, all_p = load_player_predictions()
 
-    print("Aggregating to team-year RS/RA...")
+    # ── Player-level comparison ─────────────────────────────────────────────
+    print("\n── Player-level MAE ───────────────────────────────────────────────")
+    h_valid = all_h.dropna(subset=["actual_woba"])
+    p_valid = all_p.dropna(subset=["actual_era"])
+
+    h_mae_m = float((h_valid["marcel_woba"] - h_valid["actual_woba"]).abs().mean())
+    h_mae_s = float((h_valid["stan_woba"]   - h_valid["actual_woba"]).abs().mean())
+    p_mae_m = float((p_valid["marcel_era"]  - p_valid["actual_era"]).abs().mean())
+    p_mae_s = float((p_valid["stan_era"]    - p_valid["actual_era"]).abs().mean())
+
+    print(f"  {'':20s}  {'Marcel':>8s}  {'Stan':>8s}  {'Δ':>10s}")
+    print(f"  {'Hitter wOBA MAE':20s}  {h_mae_m:8.4f}  {h_mae_s:8.4f}  {h_mae_s - h_mae_m:+10.4f}"
+          f"  (n={len(h_valid)})")
+    print(f"  {'Pitcher ERA MAE':20s}  {p_mae_m:8.4f}  {p_mae_s:8.4f}  {p_mae_s - p_mae_m:+10.4f}"
+          f"  (n={len(p_valid)})")
+
+    # Year-by-year player-level
+    print(f"\n  {'Year':>6}  {'H_MAE_M':>8}  {'H_MAE_S':>8}  {'H_Δ':>8}"
+          f"  {'P_MAE_M':>8}  {'P_MAE_S':>8}  {'P_Δ':>8}")
+    player_yearly = {}
+    for yr in COMPARE_YEARS:
+        hv = h_valid[h_valid["year"] == yr]
+        pv = p_valid[p_valid["year"] == yr]
+        hm = float((hv["marcel_woba"] - hv["actual_woba"]).abs().mean()) if len(hv) else np.nan
+        hs = float((hv["stan_woba"]   - hv["actual_woba"]).abs().mean()) if len(hv) else np.nan
+        pm = float((pv["marcel_era"]  - pv["actual_era"]).abs().mean()) if len(pv) else np.nan
+        ps = float((pv["stan_era"]    - pv["actual_era"]).abs().mean()) if len(pv) else np.nan
+        print(f"  {yr:>6}  {hm:8.4f}  {hs:8.4f}  {hs - hm:+8.4f}"
+              f"  {pm:8.4f}  {ps:8.4f}  {ps - pm:+8.4f}")
+        player_yearly[yr] = {
+            "hitter_mae_marcel": round(hm, 4), "hitter_mae_stan": round(hs, 4),
+            "pitcher_mae_marcel": round(pm, 4), "pitcher_mae_stan": round(ps, 4),
+            "n_hitters": len(hv), "n_pitchers": len(pv),
+        }
+
+    print("\nAggregating to team-year RS/RA...")
     team = compute_team_rs_ra(all_h, all_p)
 
     print("Loading actual results...")
@@ -175,19 +206,29 @@ def run_comparison() -> None:
     merged = team.merge(actual, on=["year", "team"], how="inner")
     print(f"  Matched: {len(merged)} team-years")
 
-    # Post-hoc scale RS/RA to league average (same as team_sim.py)
-    # This removes systematic Marcel bias, testing only the correction from K%/BB%
+    # Marcel-anchored scaling: calibrate both models using Marcel's league avg.
+    # Pythagorean depends only on RS/RA ratio, so the absolute level doesn't
+    # matter — but the K_WOBA constant and ERA-to-RA conversion create a
+    # systematic RS >> RA bias (~1.35 ratio vs actual 1.0).
+    # Independent scaling (old method) normalises each model's avg RS and RA
+    # separately to 535, which removes Stan's systematic improvement (K%/BB%
+    # trend correction).  Marcel-anchored scaling applies the SAME calibration
+    # factors (derived from Marcel) to Stan, preserving Stan's systematic
+    # improvement while correcting the shared calibration bias.
     for yr in COMPARE_YEARS:
         mask = merged["year"] == yr
         if not mask.any():
             continue
-        for col_rs, col_ra in [("rs_marcel", "ra_marcel"), ("rs_stan", "ra_stan")]:
-            avg_rs = merged.loc[mask, col_rs].mean()
-            avg_ra = merged.loc[mask, col_ra].mean()
-            if avg_rs > 0:
-                merged.loc[mask, col_rs] *= NPB_HIST_RS / avg_rs
-            if avg_ra > 0:
-                merged.loc[mask, col_ra] *= NPB_HIST_RS / avg_ra
+        avg_rs_m = merged.loc[mask, "rs_marcel"].mean()
+        avg_ra_m = merged.loc[mask, "ra_marcel"].mean()
+        if avg_rs_m > 0:
+            f_rs = NPB_HIST_RS / avg_rs_m
+            merged.loc[mask, "rs_marcel"] *= f_rs
+            merged.loc[mask, "rs_stan"]   *= f_rs
+        if avg_ra_m > 0:
+            f_ra = NPB_HIST_RS / avg_ra_m
+            merged.loc[mask, "ra_marcel"] *= f_ra
+            merged.loc[mask, "ra_stan"]   *= f_ra
 
     # Pythagorean wins
     merged["W_marcel"] = pythagorean_wins(
@@ -229,12 +270,26 @@ def run_comparison() -> None:
         })
 
     summary = {
-        "mae_marcel":  round(mae_marcel, 3),
-        "mae_stan":    round(mae_stan, 3),
-        "delta_mae":   round(mae_stan - mae_marcel, 3),
-        "bias_marcel": round(bias_m, 3),
-        "bias_stan":   round(bias_s, 3),
-        "n":           len(merged),
+        "scaling_method": "marcel_anchored",
+        "player_level": {
+            "hitter_woba_mae_marcel": round(h_mae_m, 4),
+            "hitter_woba_mae_stan":   round(h_mae_s, 4),
+            "hitter_delta":           round(h_mae_s - h_mae_m, 4),
+            "n_hitters":              len(h_valid),
+            "pitcher_era_mae_marcel": round(p_mae_m, 4),
+            "pitcher_era_mae_stan":   round(p_mae_s, 4),
+            "pitcher_delta":          round(p_mae_s - p_mae_m, 4),
+            "n_pitchers":             len(p_valid),
+            "yearly": player_yearly,
+        },
+        "team_level": {
+            "mae_marcel":  round(mae_marcel, 3),
+            "mae_stan":    round(mae_stan, 3),
+            "delta_mae":   round(mae_stan - mae_marcel, 3),
+            "bias_marcel": round(bias_m, 3),
+            "bias_stan":   round(bias_s, 3),
+            "n":           len(merged),
+        },
         "years":       COMPARE_YEARS,
         "detail":      out_rows,
     }

@@ -1,0 +1,534 @@
+"""Step 10: Statistical validation of Marcel vs Stan comparison.
+
+Three analyses:
+  1. Player-level significance tests (n=1000+ hitters + pitchers)
+     — 8-year LOO-CV with Ridge regression as Stan approximation
+  2. 2021 (COVID year) exclusion — 7-year results
+  3. Foreign player Stan v1 LOO-CV (2015-2025)
+
+Ridge alphas (= sigma^2 / tau^2, posterior mean approximation):
+  Japanese hitter:  0.053^2 / 0.05^2 = 1.12  (3 features: K%, BB%, BABIP)
+  Japanese pitcher: 1.10^2  / 0.5^2  = 4.84  (2 features: K%, BB%)
+  Foreign hitter:   0.05^2  / 0.02^2 = 6.25  (3 features: wOBA, K%, BB%)
+  Foreign pitcher:  1.0^2   / 0.5^2  = 4.0   (4 features: ERA, FIP, K%, BB%)
+
+Output:
+  data/projections/statistical_validation.json
+"""
+
+import csv
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+# Allow importing stan_jpn_model from same directory
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from stan_jpn_model import (
+    build_dataset,
+    ip_to_decimal,
+    standardize_features,
+)
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data"
+MODEL_DIR = DATA_DIR / "model"
+RAW_DIR = DATA_DIR / "raw"
+FOREIGN_DIR = DATA_DIR / "foreign"
+OUT_DIR = DATA_DIR / "projections"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ridge alphas (sigma^2 / tau^2)
+ALPHA_JPN_H = 0.053**2 / 0.05**2   # 1.1236
+ALPHA_JPN_P = 1.10**2 / 0.5**2     # 4.84
+ALPHA_FGN_H = 0.05**2 / 0.02**2    # 6.25
+ALPHA_FGN_P = 1.0**2 / 0.5**2      # 4.0
+
+# Japanese model LOO-CV years (Marcel needs 3 prior years → earliest = 2018)
+JPN_YEARS = list(range(2018, 2026))
+
+# Team-level constants
+NPB_PYTH_EXP = 1.83
+NPB_HIST_RS = 535.0
+K_WOBA = 0.3256
+
+
+def ridge_fit_predict(X_train, y_train, X_test, alpha):
+    """Ridge regression: beta = (X'X + alpha*I)^{-1} X'y."""
+    n_feat = X_train.shape[1]
+    beta = np.linalg.solve(
+        X_train.T @ X_train + alpha * np.eye(n_feat),
+        X_train.T @ y_train,
+    )
+    return X_test @ beta, beta
+
+
+# ── Analysis 1: Japanese Player LOO-CV ────────────────────────────────────────
+
+
+def run_jpn_loocv():
+    """8-year LOO-CV for Japanese players. Returns player-level prediction DataFrames."""
+    saber = pd.read_csv(RAW_DIR / "npb_sabermetrics_2015_2025.csv", encoding="utf-8-sig")
+    pitchers = pd.read_csv(RAW_DIR / "npb_pitchers_2015_2025.csv", encoding="utf-8-sig")
+    saber = saber.dropna(subset=["wOBA"])
+
+    feat_h = ["K_pct", "BB_pct", "BABIP"]
+    feat_p = ["K_pct", "BB_pct"]
+
+    all_h, all_p = [], []
+
+    for hold_yr in JPN_YEARS:
+        train_years = [y for y in JPN_YEARS if y != hold_yr]
+        train_h, train_p = build_dataset(saber, pitchers, train_years)
+        test_h, test_p = build_dataset(saber, pitchers, [hold_yr])
+
+        if len(test_h) == 0 or len(test_p) == 0:
+            continue
+
+        # Hitters
+        train_z_h, test_z_h, _, _ = standardize_features(train_h, test_h, feat_h)
+        y_h = (train_h["actual_woba"] - train_h["marcel_woba"]).values
+        delta_h, _ = ridge_fit_predict(train_z_h, y_h, test_z_h, ALPHA_JPN_H)
+        stan_woba = test_h["marcel_woba"].values + delta_h
+
+        for i, (_, row) in enumerate(test_h.iterrows()):
+            all_h.append({
+                "year": hold_yr, "player": row["player"], "team": row["team"],
+                "actual": row["actual_woba"], "marcel": row["marcel_woba"],
+                "stan": stan_woba[i], "actual_PA": row["actual_PA"],
+            })
+
+        # Pitchers
+        train_z_p, test_z_p, _, _ = standardize_features(train_p, test_p, feat_p)
+        y_p = (train_p["actual_era"] - train_p["marcel_era"]).values
+        delta_p, _ = ridge_fit_predict(train_z_p, y_p, test_z_p, ALPHA_JPN_P)
+        stan_era = test_p["marcel_era"].values + delta_p
+
+        for i, (_, row) in enumerate(test_p.iterrows()):
+            all_p.append({
+                "year": hold_yr, "player": row["player"], "team": row["team"],
+                "actual": row["actual_era"], "marcel": row["marcel_era"],
+                "stan": stan_era[i], "actual_IP": row["actual_IP"],
+            })
+
+    return pd.DataFrame(all_h), pd.DataFrame(all_p)
+
+
+def player_level_tests(h_df, p_df, label="All years"):
+    """Paired t-test, Wilcoxon, bootstrap on player-level absolute errors."""
+    results = {}
+
+    for name, df, col_m, col_s in [
+        ("hitter_woba", h_df, "marcel", "stan"),
+        ("pitcher_era", p_df, "marcel", "stan"),
+    ]:
+        err_m = np.abs(df["actual"].values - df[col_m].values)
+        err_s = np.abs(df["actual"].values - df[col_s].values)
+        diff = err_m - err_s   # positive → Stan better
+
+        n = len(diff)
+        mean_diff = float(np.mean(diff))
+        sd_diff = float(np.std(diff, ddof=1)) if n > 1 else 1.0
+
+        # Paired t-test
+        t_stat, t_p = stats.ttest_rel(err_m, err_s)
+        # Wilcoxon signed-rank
+        try:
+            w_stat, w_p = stats.wilcoxon(diff)
+        except ValueError:
+            w_stat, w_p = float("nan"), float("nan")
+
+        # Bootstrap P(Stan < Marcel)
+        rng = np.random.default_rng(42)
+        boot_means = [np.mean(diff[rng.integers(0, n, n)]) for _ in range(10000)]
+        p_stan_better = float(np.mean([m > 0 for m in boot_means]))
+
+        # Cohen's d
+        d = mean_diff / sd_diff if sd_diff > 0 else 0.0
+
+        stan_wins = int(np.sum(err_s < err_m))
+
+        results[name] = {
+            "n": n,
+            "mae_marcel": round(float(np.mean(err_m)), 5),
+            "mae_stan": round(float(np.mean(err_s)), 5),
+            "delta_mae": round(mean_diff, 5),
+            "paired_t_stat": round(float(t_stat), 4),
+            "paired_t_p": round(float(t_p), 6),
+            "wilcoxon_p": round(float(w_p), 6),
+            "bootstrap_p_stan_better": round(p_stan_better, 4),
+            "cohens_d": round(float(d), 4),
+            "stan_win_rate": f"{stan_wins}/{n} ({100 * stan_wins / n:.1f}%)",
+        }
+
+        print(f"\n  {label} — {name} (n={n}):")
+        print(f"    MAE Marcel={np.mean(err_m):.5f}  Stan={np.mean(err_s):.5f}  "
+              f"Δ={mean_diff:+.5f}")
+        print(f"    Paired t: t={t_stat:.3f}, p={t_p:.6f}")
+        print(f"    Wilcoxon: p={w_p:.6f}")
+        print(f"    Bootstrap P(Stan<Marcel): {p_stan_better:.4f}")
+        print(f"    Cohen's d: {d:.4f}")
+        print(f"    Stan wins: {stan_wins}/{n} ({100 * stan_wins / n:.1f}%)")
+
+    return results
+
+
+def team_level_mae(h_df, p_df, years=None, label="All years"):
+    """Compute team-level Pythagorean MAE from player-level LOO-CV predictions."""
+    actual = pd.read_csv(
+        "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
+        "/data/projections/pythagorean_2015_2025.csv",
+        encoding="utf-8-sig",
+    )
+
+    if years is not None:
+        h_df = h_df[h_df["year"].isin(years)]
+        p_df = p_df[p_df["year"].isin(years)]
+        actual = actual[actual["year"].isin(years)]
+
+    # RS from hitters
+    h = h_df.copy()
+    h["rs_marcel"] = K_WOBA * h["marcel"] * h["actual_PA"]
+    h["rs_stan"] = K_WOBA * h["stan"] * h["actual_PA"]
+    rs = h.groupby(["year", "team"])[["rs_marcel", "rs_stan"]].sum().reset_index()
+
+    # RA from pitchers
+    p = p_df.copy()
+    p["ra_marcel"] = p["marcel"] * p["actual_IP"] / 9.0
+    p["ra_stan"] = p["stan"] * p["actual_IP"] / 9.0
+    ra = p.groupby(["year", "team"])[["ra_marcel", "ra_stan"]].sum().reset_index()
+
+    team = rs.merge(ra, on=["year", "team"], how="inner")
+    merged = team.merge(
+        actual[["year", "team", "G", "W"]], on=["year", "team"], how="inner"
+    )
+
+    # Marcel-anchored scaling
+    for yr in merged["year"].unique():
+        mask = merged["year"] == yr
+        for col_m, col_s in [
+            ("rs_marcel", "rs_stan"),
+            ("ra_marcel", "ra_stan"),
+        ]:
+            avg = merged.loc[mask, col_m].mean()
+            if avg > 0:
+                f = NPB_HIST_RS / avg
+                merged.loc[mask, col_m] *= f
+                merged.loc[mask, col_s] *= f
+
+    # Pythagorean wins
+    for model in ["marcel", "stan"]:
+        rs_v = np.clip(merged[f"rs_{model}"].values, 1.0, None)
+        ra_v = np.clip(merged[f"ra_{model}"].values, 1.0, None)
+        wpct = rs_v ** NPB_PYTH_EXP / (rs_v ** NPB_PYTH_EXP + ra_v ** NPB_PYTH_EXP)
+        merged[f"W_{model}"] = wpct * merged["G"].values
+
+    merged["err_marcel"] = merged["W_marcel"] - merged["W"]
+    merged["err_stan"] = merged["W_stan"] - merged["W"]
+
+    mae_m = float(merged["err_marcel"].abs().mean())
+    mae_s = float(merged["err_stan"].abs().mean())
+
+    # Paired tests on team-level errors
+    err_m_abs = merged["err_marcel"].abs().values
+    err_s_abs = merged["err_stan"].abs().values
+    diff = err_m_abs - err_s_abs
+    t_stat, t_p = stats.ttest_rel(err_m_abs, err_s_abs)
+
+    # Bootstrap
+    rng = np.random.default_rng(42)
+    n = len(diff)
+    boot_means = [np.mean(diff[rng.integers(0, n, n)]) for _ in range(10000)]
+    p_stan_better = float(np.mean([m > 0 for m in boot_means]))
+
+    print(f"\n  {label} — Team MAE (n={len(merged)}):")
+    print(f"    Marcel={mae_m:.3f}  Stan={mae_s:.3f}  Δ={mae_s - mae_m:+.3f}")
+    print(f"    Paired t: p={t_p:.6f}  Bootstrap P(Stan<Marcel): {p_stan_better:.4f}")
+
+    yearly = {}
+    for yr, grp in merged.groupby("year"):
+        m = float(grp["err_marcel"].abs().mean())
+        s = float(grp["err_stan"].abs().mean())
+        yearly[int(yr)] = {
+            "marcel": round(m, 3), "stan": round(s, 3),
+            "delta": round(s - m, 3), "n": len(grp),
+        }
+        print(f"    {yr}: Marcel={m:.3f}  Stan={s:.3f}  Δ={s - m:+.3f}")
+
+    return {
+        "mae_marcel": round(mae_m, 3),
+        "mae_stan": round(mae_s, 3),
+        "delta_mae": round(mae_s - mae_m, 3),
+        "paired_t_p": round(float(t_p), 6),
+        "bootstrap_p_stan_better": round(p_stan_better, 4),
+        "n_team_years": len(merged),
+        "yearly": yearly,
+    }
+
+
+# ── Analysis 3: Foreign Player LOO-CV ─────────────────────────────────────────
+
+
+def run_foreign_loocv():
+    """LOO-CV for foreign player Stan v1 model (baseline=league avg vs Stan v1)."""
+    # Load foreign player data
+    hitter_pairs, pitcher_pairs = [], []
+    with open(FOREIGN_DIR / "player_conversion_details.csv", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            yr = int(row["npb_first_year"])
+            # Hitters
+            if (row.get("prev_wOBA") and row.get("npb_first_wOBA")
+                    and row.get("wOBA_ratio")):
+                try:
+                    d = {
+                        "year": yr,
+                        "name": row.get("english_name", ""),
+                        "prev_wOBA": float(row["prev_wOBA"]),
+                        "actual": float(row["npb_first_wOBA"]),
+                    }
+                    for col in ["prev_K_pct", "prev_BB_pct"]:
+                        try:
+                            d[col] = float(row[col])
+                        except (ValueError, KeyError, TypeError):
+                            d[col] = None
+                    hitter_pairs.append(d)
+                except (ValueError, KeyError):
+                    pass
+            # Pitchers
+            if (row.get("prev_ERA") and row.get("npb_first_ERA")
+                    and row.get("ERA_ratio")):
+                try:
+                    d = {
+                        "year": yr,
+                        "name": row.get("english_name", ""),
+                        "prev_ERA": float(row["prev_ERA"]),
+                        "actual": float(row["npb_first_ERA"]),
+                    }
+                    for col in ["prev_FIP", "prev_K_pct", "prev_BB_pct"]:
+                        try:
+                            d[col] = float(row[col])
+                        except (ValueError, KeyError, TypeError):
+                            d[col] = None
+                    pitcher_pairs.append(d)
+                except (ValueError, KeyError):
+                    pass
+
+    h_df = pd.DataFrame(hitter_pairs)
+    p_df = pd.DataFrame(pitcher_pairs)
+
+    # NPB league averages per year
+    saber = pd.read_csv(RAW_DIR / "npb_sabermetrics_2015_2025.csv", encoding="utf-8-sig")
+    pitchers_raw = pd.read_csv(RAW_DIR / "npb_pitchers_2015_2025.csv", encoding="utf-8-sig")
+
+    lg_woba = {}
+    for yr, grp in saber[saber["PA"] >= 100].groupby("year"):
+        lg_woba[yr] = float(grp["wOBA"].mean())
+
+    lg_era = {}
+    for yr, grp in pitchers_raw.groupby("year"):
+        grp = grp.copy()
+        grp["IP_dec"] = grp["IP"].apply(ip_to_decimal)
+        grp["ERA"] = pd.to_numeric(grp["ERA"], errors="coerce")
+        grp = grp[(grp["IP_dec"] >= 30) & grp["ERA"].notna()]
+        if len(grp) > 0:
+            lg_era[yr] = float(grp["ERA"].mean())
+
+    h_df["lg_avg"] = h_df["year"].map(lg_woba)
+    p_df["lg_avg"] = p_df["year"].map(lg_era)
+    h_df = h_df.dropna(subset=["lg_avg"])
+    p_df = p_df.dropna(subset=["lg_avg"])
+
+    print(f"  Foreign data: {len(h_df)} hitters, {len(p_df)} pitchers")
+
+    # ── Hitter LOO-CV ──
+    h_results = []
+    for hold_yr in sorted(h_df["year"].unique()):
+        train = h_df[h_df["year"] != hold_yr].copy()
+        test = h_df[h_df["year"] == hold_yr].copy()
+        if len(test) == 0 or len(train) < 5:
+            continue
+
+        # Fill missing K%/BB% with training mean
+        for col in ["prev_K_pct", "prev_BB_pct"]:
+            tmean = train[col].mean()
+            train[col] = train[col].fillna(tmean)
+            test[col] = test[col].fillna(tmean)
+
+        feat_cols = ["prev_wOBA", "prev_K_pct", "prev_BB_pct"]
+        means = train[feat_cols].mean()
+        stds = train[feat_cols].std().replace(0, 1)
+
+        X_train = ((train[feat_cols] - means) / stds).values
+        X_test = ((test[feat_cols] - means) / stds).values
+        y_train = (train["actual"] - train["lg_avg"]).values
+
+        delta, _ = ridge_fit_predict(X_train, y_train, X_test, ALPHA_FGN_H)
+        stan_pred = test["lg_avg"].values + delta
+
+        for i, (_, row) in enumerate(test.iterrows()):
+            h_results.append({
+                "year": int(hold_yr), "name": row["name"],
+                "actual": row["actual"], "baseline": row["lg_avg"],
+                "stan": float(stan_pred[i]),
+            })
+
+    # ── Pitcher LOO-CV ──
+    p_results = []
+    for hold_yr in sorted(p_df["year"].unique()):
+        train = p_df[p_df["year"] != hold_yr].copy()
+        test = p_df[p_df["year"] == hold_yr].copy()
+        if len(test) == 0 or len(train) < 5:
+            continue
+
+        for col in ["prev_FIP", "prev_K_pct", "prev_BB_pct"]:
+            tmean = train[col].mean()
+            train[col] = train[col].fillna(tmean)
+            test[col] = test[col].fillna(tmean)
+
+        feat_cols = ["prev_ERA", "prev_FIP", "prev_K_pct", "prev_BB_pct"]
+        means = train[feat_cols].mean()
+        stds = train[feat_cols].std().replace(0, 1)
+
+        X_train = ((train[feat_cols] - means) / stds).values
+        X_test = ((test[feat_cols] - means) / stds).values
+        y_train = (train["actual"] - train["lg_avg"]).values
+
+        delta, _ = ridge_fit_predict(X_train, y_train, X_test, ALPHA_FGN_P)
+        stan_pred = test["lg_avg"].values + delta
+
+        for i, (_, row) in enumerate(test.iterrows()):
+            p_results.append({
+                "year": int(hold_yr), "name": row["name"],
+                "actual": row["actual"], "baseline": row["lg_avg"],
+                "stan": float(stan_pred[i]),
+            })
+
+    fgn_h = pd.DataFrame(h_results)
+    fgn_p = pd.DataFrame(p_results)
+
+    # Summarize
+    results = {}
+    for name, df in [("hitter", fgn_h), ("pitcher", fgn_p)]:
+        err_base = np.abs(df["actual"].values - df["baseline"].values)
+        err_stan = np.abs(df["actual"].values - df["stan"].values)
+        diff = err_base - err_stan  # positive → Stan better
+
+        n = len(diff)
+        mae_base = float(np.mean(err_base))
+        mae_stan = float(np.mean(err_stan))
+
+        t_stat, t_p = stats.ttest_rel(err_base, err_stan)
+        try:
+            w_stat, w_p = stats.wilcoxon(diff)
+        except ValueError:
+            w_stat, w_p = float("nan"), float("nan")
+
+        rng = np.random.default_rng(42)
+        boot_means = [np.mean(diff[rng.integers(0, n, n)]) for _ in range(10000)]
+        p_stan_better = float(np.mean([m > 0 for m in boot_means]))
+
+        stan_wins = int(np.sum(err_stan < err_base))
+
+        yearly = {}
+        for yr in sorted(df["year"].unique()):
+            sub = df[df["year"] == yr]
+            eb = float(np.abs(sub["actual"].values - sub["baseline"].values).mean())
+            es = float(np.abs(sub["actual"].values - sub["stan"].values).mean())
+            yearly[int(yr)] = {
+                "baseline": round(eb, 4), "stan": round(es, 4),
+                "delta": round(es - eb, 4), "n": len(sub),
+            }
+
+        results[name] = {
+            "n": n,
+            "mae_baseline": round(mae_base, 4),
+            "mae_stan": round(mae_stan, 4),
+            "delta_mae": round(mae_stan - mae_base, 4),
+            "paired_t_p": round(float(t_p), 6),
+            "wilcoxon_p": round(float(w_p), 6),
+            "bootstrap_p_stan_better": round(p_stan_better, 4),
+            "stan_win_rate": f"{stan_wins}/{n} ({100 * stan_wins / n:.1f}%)",
+            "yearly": yearly,
+        }
+
+        print(f"\n  Foreign {name} LOO-CV (n={n}):")
+        print(f"    MAE Baseline={mae_base:.4f}  Stan={mae_stan:.4f}  "
+              f"Δ={mae_stan - mae_base:+.4f}")
+        print(f"    Paired t: p={t_p:.6f}  Wilcoxon: p={w_p:.6f}")
+        print(f"    Bootstrap P(Stan<Baseline): {p_stan_better:.4f}")
+        print(f"    Stan wins: {stan_wins}/{n} ({100 * stan_wins / n:.1f}%)")
+        for yr in sorted(yearly):
+            y = yearly[yr]
+            print(f"    {yr}: Base={y['baseline']:.4f}  Stan={y['stan']:.4f}  "
+                  f"Δ={y['delta']:+.4f}  n={y['n']}")
+
+    return results
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+
+def main():
+    print("=" * 70)
+    print("Step 10: Statistical Validation — Marcel vs Stan")
+    print("=" * 70)
+
+    # ── 1. Japanese LOO-CV ──
+    print("\n[1] Japanese Player 8-year LOO-CV (2018-2025)")
+    h_df, p_df = run_jpn_loocv()
+    print(f"  Collected: {len(h_df)} hitter-years, {len(p_df)} pitcher-years")
+
+    # 1a. Player-level significance tests
+    print("\n[1a] Player-level significance tests — ALL years")
+    player_all = player_level_tests(h_df, p_df, "All 8 years")
+
+    # 1b. Team-level MAE
+    print("\n[1b] Team-level MAE — ALL years")
+    team_all = team_level_mae(h_df, p_df, label="All 8 years")
+
+    # ── 2. 2021 (COVID) exclusion ──
+    print("\n[2] 2021 exclusion — 7-year results")
+    h_no21 = h_df[h_df["year"] != 2021]
+    p_no21 = p_df[p_df["year"] != 2021]
+    years_no21 = [y for y in JPN_YEARS if y != 2021]
+
+    player_no21 = player_level_tests(h_no21, p_no21, "Excluding 2021")
+    team_no21 = team_level_mae(h_no21, p_no21, years=years_no21, label="Excluding 2021")
+
+    # ── 3. Foreign player LOO-CV ──
+    print("\n[3] Foreign Player Stan v1 LOO-CV (2015-2025)")
+    foreign = run_foreign_loocv()
+
+    # ── Save results ──
+    output = {
+        "step": "10_statistical_validation",
+        "japanese_loocv": {
+            "years": JPN_YEARS,
+            "n_hitters": len(h_df),
+            "n_pitchers": len(p_df),
+            "player_level_all": player_all,
+            "team_level_all": team_all,
+            "player_level_no2021": player_no21,
+            "team_level_no2021": team_no21,
+        },
+        "foreign_loocv": foreign,
+        "ridge_alphas": {
+            "jpn_hitter": round(ALPHA_JPN_H, 3),
+            "jpn_pitcher": round(ALPHA_JPN_P, 3),
+            "fgn_hitter": round(ALPHA_FGN_H, 3),
+            "fgn_pitcher": round(ALPHA_FGN_P, 3),
+        },
+    }
+
+    out_path = OUT_DIR / "statistical_validation.json"
+    out_path.write_text(
+        json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"\nSaved -> {out_path}")
+
+
+if __name__ == "__main__":
+    main()
