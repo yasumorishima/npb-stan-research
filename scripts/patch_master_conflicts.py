@@ -45,6 +45,47 @@ NEEDS_REVIEW_PATH = ROOT / "data" / "foreign" / "needs_review.csv"
 MIN_PA = 30
 MIN_IP = 10.0
 MAX_LOOKBACK = 6
+# Minimum PA to include a batter in FanGraphs candidate search.
+# Filters out pitchers who occasionally appear as DH/PH in batting stats.
+FG_MIN_PA = 50
+
+# Pykakasi converts katakana via Japanese phonetic rules, which doesn't
+# match Spanish/Latin surnames.  Map pykakasi output → actual surname.
+ROMAJI_TO_SURNAME: dict[str, str] = {
+    # Rodriguez family  (trailing "z" → "-su" in Japanese)
+    "rodorigesu": "rodriguez",
+    "gonzaresu": "gonzalez",
+    "ramiresu": "ramirez",
+    "peresu": "perez",
+    "sanchesu": "sanchez",
+    "suaresu": "suarez",
+    "orutisu": "ortiz",
+    "arubaresu": "alvarez",
+    "arubarezu": "alvarez",
+    # Martinez / Hernandez / Fernandez
+    "marutinesu": "martinez",
+    "maruteinesu": "martinez",
+    "herunandesu": "hernandez",
+    "erunandesu": "hernandez",
+    "ferunandesu": "fernandez",
+    "fuerunandesu": "fernandez",
+    # Mejia / Jimenez  (Spanish "j" → "h" in Japanese)
+    "mehia": "mejia",
+    "himenesu": "jimenez",
+    "jimenesu": "jimenez",
+    # Garcia  (Japanese transcribes as ガルシア/アルシア)
+    "garushia": "garcia",
+    "arushia": "garcia",
+    # Escobar  (エスコバール → long vowel at end)
+    "esukoba": "escobar",
+    "esukobaa": "escobar",
+    "esukobaru": "escobar",
+    # Other common patterns
+    "toresu": "torres",
+    "toreesu": "torres",
+    "furooresu": "flores",
+    "furoorezu": "flores",
+}
 
 try:
     import pykakasi
@@ -290,6 +331,11 @@ def find_fg_candidates(
     norm_srn = normalize_ascii(surname_romaji)
     df = pitching_df if player_type == "pitcher" else batting_df
 
+    # For batters, drop rows where the player has very few PAs (typically pitchers
+    # who batted as DH/PH — they can produce false surname matches).
+    if player_type == "hitter" and "PA" in df.columns:
+        df = df[df["PA"] >= FG_MIN_PA]
+
     if df.empty or "Name" not in df.columns:
         return []
 
@@ -366,11 +412,14 @@ def resolve_and_update(
 
         romaji = katakana_to_romaji(name)
         # Surname = last space-separated token in romaji
-        surname = romaji.split()[-1] if romaji.split() else ""
+        surname_raw = romaji.split()[-1] if romaji.split() else ""
+        # Override with Spanish/Latin surname table when pykakasi romaji doesn't match
+        surname = ROMAJI_TO_SURNAME.get(surname_raw, surname_raw)
 
         flag = "SAME_YEAR" if c["same_year_conflict"] else "GAP"
         print(f"\n[{flag}] {name} → {team} ({debut_year})  master={c['master_english']}")
-        print(f"  romaji: {romaji!r}  surname: {surname!r}")
+        override_note = f" → {surname!r} (override)" if surname != surname_raw else ""
+        print(f"  romaji: {romaji!r}  surname: {surname_raw!r}{override_note}")
 
         candidates = find_fg_candidates(surname, ptype, debut_year, batting_df, pitching_df)
         print(f"  FanGraphs candidates: {[n for n, _, _ in candidates]}")
