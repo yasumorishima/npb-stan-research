@@ -53,7 +53,7 @@ CS_SPOTS = 3  # top-3 qualify for Climax Series
 
 # ── Data source: npb-prediction (public repo) ──────────────────────────────────
 NPBP_BASE = (
-    "https://raw.githubusercontent.com/yasunorim/npb-prediction/master/data/projections"
+    "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main/data/projections"
 )
 
 
