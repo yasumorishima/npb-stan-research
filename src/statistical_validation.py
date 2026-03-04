@@ -592,11 +592,12 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
 
     # Step 12b: Integrate foreign player LOO-CV predictions
     h_fgn, p_fgn = _foreign_loocv_for_teams(saber, pitchers_raw)
-    if years is not None:
-        if len(h_fgn) > 0:
-            h_fgn = h_fgn[h_fgn["year"].isin(years)]
-        if len(p_fgn) > 0:
-            p_fgn = p_fgn[p_fgn["year"].isin(years)]
+    # Foreign predictions only for years with Japanese player data
+    valid_years = set(h_df["year"].unique())
+    if len(h_fgn) > 0:
+        h_fgn = h_fgn[h_fgn["year"].isin(valid_years)]
+    if len(p_fgn) > 0:
+        p_fgn = p_fgn[p_fgn["year"].isin(valid_years)]
     # Remove duplicates (prefer foreign model for first-year foreign players)
     if len(h_fgn) > 0:
         fgn_h_keys = set(zip(h_fgn["player"], h_fgn["year"]))
