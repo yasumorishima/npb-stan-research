@@ -1,9 +1,10 @@
 """Step 12 diagnostic: Big-miss team-years breakdown.
 
 For team-years with |err| > 10W, show:
-  1. Foreign player RS/RA contribution (in-model vs missing)
-  2. Marcel vs Stan player-level breakdown (where Stan helped / hurt)
-  3. Coverage gap analysis
+  1. Year-over-year player analysis (PA/IP drops, wOBA/ERA changes)
+  2. Key departures / arrivals
+  3. Quantified RS/RA impact per factor
+  4. Cross-team pattern summary
 
 Output:
   data/projections/big_miss_diagnosis.json
@@ -97,14 +98,109 @@ def run_loocv_with_detail():
     return h_df, p_df, saber_raw, pitchers_raw
 
 
+def _yoy_hitter_analysis(yr, tm, saber):
+    """Year-over-year hitter analysis: PA drops and wOBA changes."""
+    prev_yr = yr - 1
+    # Current year hitters on this team (all PA, not just MIN_PA)
+    cur = saber[(saber["year"] == yr) & (saber["team"] == tm) & (saber["PA"] >= MIN_PA)].copy()
+    # Previous year: all teams (to catch trades/FA)
+    prev_all = saber[(saber["year"] == prev_yr) & (saber["PA"] >= MIN_PA)].copy()
+    # Previous year same team
+    prev_tm = prev_all[prev_all["team"] == tm]
+
+    # --- Players on team in both years (returners) ---
+    cur_players = set(cur["player"])
+    prev_tm_players = set(prev_tm["player"])
+
+    # Merge current with their previous stats (any team)
+    returners = cur.merge(
+        prev_all[["player", "PA", "wOBA", "team"]].rename(
+            columns={"PA": "prev_PA", "wOBA": "prev_wOBA", "team": "prev_team"}),
+        on="player", how="inner"
+    )
+    # If player was on multiple teams in prev year, keep highest PA
+    returners = returners.sort_values("prev_PA", ascending=False).drop_duplicates("player")
+    returners["delta_PA"] = returners["PA"] - returners["prev_PA"]
+    returners["delta_wOBA"] = returners["wOBA"] - returners["prev_wOBA"]
+    returners["rs_impact_pa"] = K_WOBA * returners["prev_wOBA"] * returners["delta_PA"]
+    returners["rs_impact_perf"] = K_WOBA * returners["delta_wOBA"] * returners["PA"]
+
+    # --- Departures: on team in t-1 but not in t (any team) ---
+    departed = prev_tm[~prev_tm["player"].isin(cur_players)].copy()
+    # Check if they went to another team in year t
+    cur_all = saber[(saber["year"] == yr) & (saber["PA"] >= MIN_PA)]
+    departed = departed.merge(
+        cur_all[["player", "PA", "team", "wOBA"]].rename(
+            columns={"PA": "new_PA", "team": "new_team", "wOBA": "new_wOBA"}),
+        on="player", how="left"
+    )
+    departed["lost_rs"] = K_WOBA * departed["wOBA"].fillna(0) * departed["PA"]
+
+    # --- Arrivals: on team in t but not in t-1 (same team) ---
+    arrivals = cur[~cur["player"].isin(prev_tm_players)].copy()
+    arrivals = arrivals.merge(
+        prev_all[["player", "PA", "wOBA", "team"]].rename(
+            columns={"PA": "prev_PA", "wOBA": "prev_wOBA", "team": "prev_team"}),
+        on="player", how="left"
+    )
+    arrivals["gained_rs"] = K_WOBA * arrivals["wOBA"].fillna(0) * arrivals["PA"]
+
+    return returners, departed, arrivals
+
+
+def _yoy_pitcher_analysis(yr, tm, pitchers_raw):
+    """Year-over-year pitcher analysis: IP drops and ERA changes."""
+    prev_yr = yr - 1
+    cur = pitchers_raw[(pitchers_raw["year"] == yr) & (pitchers_raw["team"] == tm)
+                       & (pitchers_raw["IP_dec"] >= MIN_IP)].copy()
+    prev_all = pitchers_raw[(pitchers_raw["year"] == prev_yr)
+                            & (pitchers_raw["IP_dec"] >= MIN_IP)].copy()
+    prev_tm = prev_all[prev_all["team"] == tm]
+
+    cur_players = set(cur["player"])
+    prev_tm_players = set(prev_tm["player"])
+
+    # Returners
+    returners = cur.merge(
+        prev_all[["player", "IP_dec", "ERA_num", "team"]].rename(
+            columns={"IP_dec": "prev_IP", "ERA_num": "prev_ERA", "team": "prev_team"}),
+        on="player", how="inner"
+    )
+    returners = returners.sort_values("prev_IP", ascending=False).drop_duplicates("player")
+    returners["delta_IP"] = returners["IP_dec"] - returners["prev_IP"]
+    returners["delta_ERA"] = returners["ERA_num"] - returners["prev_ERA"]
+    returners["ra_impact_ip"] = returners["prev_ERA"] * returners["delta_IP"] / 9.0
+    returners["ra_impact_perf"] = returners["delta_ERA"] * returners["IP_dec"] / 9.0
+
+    # Departures
+    departed = prev_tm[~prev_tm["player"].isin(cur_players)].copy()
+    cur_all = pitchers_raw[(pitchers_raw["year"] == yr) & (pitchers_raw["IP_dec"] >= MIN_IP)]
+    departed = departed.merge(
+        cur_all[["player", "IP_dec", "team", "ERA_num"]].rename(
+            columns={"IP_dec": "new_IP", "team": "new_team", "ERA_num": "new_ERA"}),
+        on="player", how="left"
+    )
+    departed["lost_ra"] = departed["ERA_num"].fillna(0) * departed["IP_dec"] / 9.0
+
+    # Arrivals
+    arrivals = cur[~cur["player"].isin(prev_tm_players)].copy()
+    arrivals = arrivals.merge(
+        prev_all[["player", "IP_dec", "ERA_num", "team"]].rename(
+            columns={"IP_dec": "prev_IP", "ERA_num": "prev_ERA", "team": "prev_team"}),
+        on="player", how="left"
+    )
+    arrivals["gained_ra"] = arrivals["ERA_num"].fillna(0) * arrivals["IP_dec"] / 9.0
+
+    return returners, departed, arrivals
+
+
 def main():
     print("=" * 70)
-    print("Step 12 Diagnostic: Big-Miss Team-Years Breakdown")
+    print("Step 12 Diagnostic: Big-Miss Team-Years (YoY Analysis)")
     print("=" * 70)
 
     foreign_names = load_foreign_names()
     h_df, p_df, saber, pitchers_raw = run_loocv_with_detail()
-    lg_woba, lg_era = _compute_league_averages(saber, pitchers_raw)
 
     # Load actual wins
     actual = pd.read_csv(
@@ -113,254 +209,210 @@ def main():
         encoding="utf-8-sig",
     )
 
-    # --- Compute team predictions (same logic as team_level_mae) ---
-    from statistical_validation import _impute_missing_players
+    # Load team detail for big-miss identification
+    team_detail = pd.read_csv(OUT_DIR / "team_detail_2018_2025.csv")
 
-    impute = _impute_missing_players(h_df, p_df, saber, pitchers_raw, lg_woba, lg_era)
-
-    h = h_df.copy()
-    h["rs_marcel"] = K_WOBA * h["marcel"] * h["actual_PA"]
-    h["rs_stan"] = K_WOBA * h["stan"] * h["actual_PA"]
-    rs = h.groupby(["year", "team"])[["rs_marcel", "rs_stan"]].sum().reset_index()
-
-    p = p_df.copy()
-    p["ra_marcel"] = p["marcel"] * p["actual_IP"] / 9.0
-    p["ra_stan"] = p["stan"] * p["actual_IP"] / 9.0
-    ra = p.groupby(["year", "team"])[["ra_marcel", "ra_stan"]].sum().reset_index()
-
-    team = rs.merge(ra, on=["year", "team"], how="inner")
-    merged = team.merge(actual[["year", "team", "G", "W"]], on=["year", "team"], how="inner")
-
-    # Add imputation
-    merged["imp_rs"] = merged.apply(
-        lambda r: impute.get((r["year"], r["team"]), {}).get("imputed_rs", 0), axis=1)
-    merged["imp_ra"] = merged.apply(
-        lambda r: impute.get((r["year"], r["team"]), {}).get("imputed_ra", 0), axis=1)
-    merged["rs_marcel"] += merged["imp_rs"]
-    merged["rs_stan"] += merged["imp_rs"]
-    merged["ra_marcel"] += merged["imp_ra"]
-    merged["ra_stan"] += merged["imp_ra"]
-
-    # Scaling
-    for yr in merged["year"].unique():
-        mask = merged["year"] == yr
-        for col_m, col_s in [("rs_marcel", "rs_stan"), ("ra_marcel", "ra_stan")]:
-            avg = merged.loc[mask, col_m].mean()
-            if avg > 0:
-                f = NPB_HIST_RS / avg
-                merged.loc[mask, col_m] *= f
-                merged.loc[mask, col_s] *= f
-
-    # Pythagorean wins
-    for model in ["marcel", "stan"]:
-        rs_v = np.clip(merged[f"rs_{model}"].values, 1.0, None)
-        ra_v = np.clip(merged[f"ra_{model}"].values, 1.0, None)
-        wpct = rs_v ** NPB_PYTH_EXP / (rs_v ** NPB_PYTH_EXP + ra_v ** NPB_PYTH_EXP)
-        merged[f"W_{model}"] = wpct * merged["G"].values
-
-    merged["err_M"] = merged["W_marcel"] - merged["W"]
-    merged["err_S"] = merged["W_stan"] - merged["W"]
-
-    # --- Identify big misses ---
-    big = merged[(merged["err_M"].abs() > ERR_THRESHOLD) | (merged["err_S"].abs() > ERR_THRESHOLD)]
-    big = big.sort_values("err_M", key=abs, ascending=False)
+    big = team_detail[
+        (team_detail["err_M"].abs() > ERR_THRESHOLD)
+        | (team_detail["err_S"].abs() > ERR_THRESHOLD)
+    ].sort_values("err_M", key=abs, ascending=False)
 
     print(f"\nBig-miss team-years (|err| > {ERR_THRESHOLD}W): {len(big)}")
-    print("=" * 70)
 
-    results = []
+    # Collect pattern summary
+    all_factors = []
 
     for _, row in big.iterrows():
         yr = int(row["year"])
         tm = row["team"]
-        print(f"\n{'='*60}")
-        print(f"  {yr} {tm}  actual={int(row['W'])}W  "
+        err_m = row["err_M"]
+        direction = "overestimate (model too high)" if err_m > 0 else "underestimate (model too low)"
+
+        print(f"\n{'='*70}")
+        print(f"  {yr} {tm}  actual={int(row['actual_W'])}W  "
               f"Marcel={row['W_marcel']:.1f}  Stan={row['W_stan']:.1f}  "
-              f"err_M={row['err_M']:+.1f}  err_S={row['err_S']:+.1f}")
-        print(f"{'='*60}")
+              f"err_M={err_m:+.1f}  err_S={row['err_S']:+.1f}")
+        print(f"  Direction: {direction}")
+        print(f"  Coverage: PA={row['PA_cov']:.1f}%  IP={row['IP_cov']:.1f}%")
+        print(f"{'='*70}")
 
-        # --- Hitter breakdown ---
-        yr_h = h_df[(h_df["year"] == yr) & (h_df["team"] == tm)].copy()
-        yr_h["is_foreign"] = yr_h["player"].isin(foreign_names)
-        yr_h["rs_actual"] = K_WOBA * yr_h["actual"] * yr_h["actual_PA"]
-        yr_h["rs_marcel"] = K_WOBA * yr_h["marcel"] * yr_h["actual_PA"]
-        yr_h["rs_stan"] = K_WOBA * yr_h["stan"] * yr_h["actual_PA"]
-        yr_h["err_m"] = yr_h["rs_marcel"] - yr_h["rs_actual"]
-        yr_h["err_s"] = yr_h["rs_stan"] - yr_h["rs_actual"]
-        yr_h["stan_better"] = yr_h["err_s"].abs() < yr_h["err_m"].abs()
+        # === HITTER YoY ===
+        ret_h, dep_h, arr_h = _yoy_hitter_analysis(yr, tm, saber)
 
-        # Missing foreign hitters (in raw data but not in model)
-        all_h_raw = saber[(saber["year"] == yr) & (saber["team"] == tm)]
-        all_h_raw = all_h_raw[all_h_raw["PA"] >= MIN_PA]
-        model_players_h = set(yr_h["player"])
-        missing_h = all_h_raw[~all_h_raw["player"].isin(model_players_h)].copy()
-        missing_h["is_foreign"] = missing_h["player"].isin(foreign_names)
+        # Top PA droppers (negative delta = played less)
+        pa_drops = ret_h[ret_h["delta_PA"] < -100].sort_values("delta_PA")
+        if len(pa_drops) > 0:
+            print(f"\n  [Hitter PA drops (>100 PA decrease)]")
+            for _, r in pa_drops.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"PA: {int(r['prev_PA']):>3d}→{int(r['PA']):>3d} (Δ{int(r['delta_PA']):+d})  "
+                      f"wOBA: {r['prev_wOBA']:.3f}→{r['wOBA']:.3f}  "
+                      f"RS impact: {r['rs_impact_pa']:+.1f}")
 
-        print(f"\n  [Hitters in model: {len(yr_h)}  Missing: {len(missing_h)}]")
+        # Top wOBA changers
+        perf_h = ret_h[ret_h["delta_wOBA"].abs() > 0.040].sort_values("rs_impact_perf")
+        if len(perf_h) > 0:
+            print(f"\n  [Hitter wOBA surprises (|Δ|>.040)]")
+            for _, r in perf_h.iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"PA={int(r['PA']):>3d}  "
+                      f"wOBA: {r['prev_wOBA']:.3f}→{r['wOBA']:.3f} (Δ{r['delta_wOBA']:+.3f})  "
+                      f"RS impact: {r['rs_impact_perf']:+.1f}")
 
-        # In-model foreign hitters
-        fgn_h = yr_h[yr_h["is_foreign"]]
-        jpn_h = yr_h[~yr_h["is_foreign"]]
+        # Departures (top 5 by lost RS)
+        dep_h_sorted = dep_h.sort_values("lost_rs", ascending=False)
+        if len(dep_h_sorted) > 0:
+            print(f"\n  [Hitter departures (left team)]")
+            for _, r in dep_h_sorted.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                dest = f"→{r['new_team']}" if pd.notna(r.get("new_team")) else "→retired/2軍"
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"prev PA={int(r['PA']):>3d}  wOBA={r['wOBA']:.3f}  "
+                      f"lost RS={r['lost_rs']:.1f}  {dest}")
 
-        if len(fgn_h) > 0:
-            print(f"  Foreign hitters IN MODEL ({len(fgn_h)}):")
-            for _, ph in fgn_h.sort_values("actual_PA", ascending=False).iterrows():
-                print(f"    {ph['player']:10s}  PA={int(ph['actual_PA']):>3d}  "
-                      f"wOBA: actual={ph['actual']:.3f} M={ph['marcel']:.3f} S={ph['stan']:.3f}  "
-                      f"RS_err: M={ph['err_m']:+.1f} S={ph['err_s']:+.1f}  "
-                      f"{'✓Stan' if ph['stan_better'] else '✗Marcel'}")
+        # Arrivals (top 5 by gained RS)
+        arr_h_sorted = arr_h.sort_values("gained_rs", ascending=False)
+        if len(arr_h_sorted) > 0:
+            print(f"\n  [Hitter arrivals (joined team)]")
+            for _, r in arr_h_sorted.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                src = f"←{r['prev_team']}" if pd.notna(r.get("prev_team")) else "←rookie/2軍"
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"PA={int(r['PA']):>3d}  wOBA={r['wOBA']:.3f}  "
+                      f"gained RS={r['gained_rs']:.1f}  {src}")
 
-        # Missing foreign hitters
-        missing_fgn_h = missing_h[missing_h["is_foreign"]]
-        missing_jpn_h = missing_h[~missing_h["is_foreign"]]
-        if len(missing_fgn_h) > 0:
-            total_fgn_pa = int(missing_fgn_h["PA"].sum())
-            print(f"  Foreign hitters MISSING ({len(missing_fgn_h)}, {total_fgn_pa} PA):")
-            for _, mh in missing_fgn_h.sort_values("PA", ascending=False).iterrows():
-                woba = mh["wOBA"] if pd.notna(mh["wOBA"]) else 0
-                print(f"    {mh['player']:10s}  PA={int(mh['PA']):>3d}  wOBA={woba:.3f}")
+        # === PITCHER YoY ===
+        ret_p, dep_p, arr_p = _yoy_pitcher_analysis(yr, tm, pitchers_raw)
 
-        if len(missing_jpn_h) > 0:
-            total_jpn_pa = int(missing_jpn_h["PA"].sum())
-            print(f"  Japanese hitters MISSING ({len(missing_jpn_h)}, {total_jpn_pa} PA):")
-            for _, mh in missing_jpn_h.sort_values("PA", ascending=False).head(5).iterrows():
-                woba = mh["wOBA"] if pd.notna(mh["wOBA"]) else 0
-                print(f"    {mh['player']:10s}  PA={int(mh['PA']):>3d}  wOBA={woba:.3f}")
+        # Top IP droppers
+        ip_drops = ret_p[ret_p["delta_IP"] < -30].sort_values("delta_IP")
+        if len(ip_drops) > 0:
+            print(f"\n  [Pitcher IP drops (>30 IP decrease)]")
+            for _, r in ip_drops.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                era_prev = r["prev_ERA"] if pd.notna(r["prev_ERA"]) else 0
+                era_cur = r["ERA_num"] if pd.notna(r["ERA_num"]) else 0
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"IP: {r['prev_IP']:>5.1f}→{r['IP_dec']:>5.1f} (Δ{r['delta_IP']:+.1f})  "
+                      f"ERA: {era_prev:.2f}→{era_cur:.2f}  "
+                      f"RA impact: {r['ra_impact_ip']:+.1f}")
 
-        # --- Pitcher breakdown ---
-        yr_p = p_df[(p_df["year"] == yr) & (p_df["team"] == tm)].copy()
-        yr_p["is_foreign"] = yr_p["player"].isin(foreign_names)
-        yr_p["ra_actual"] = yr_p["actual"] * yr_p["actual_IP"] / 9.0
-        yr_p["ra_marcel"] = yr_p["marcel"] * yr_p["actual_IP"] / 9.0
-        yr_p["ra_stan"] = yr_p["stan"] * yr_p["actual_IP"] / 9.0
-        yr_p["err_m"] = yr_p["ra_marcel"] - yr_p["ra_actual"]
-        yr_p["err_s"] = yr_p["ra_stan"] - yr_p["ra_actual"]
-        yr_p["stan_better"] = yr_p["err_s"].abs() < yr_p["err_m"].abs()
+        # Top ERA changers
+        perf_p = ret_p[ret_p["delta_ERA"].abs() > 1.0].sort_values("ra_impact_perf", ascending=False)
+        if len(perf_p) > 0:
+            print(f"\n  [Pitcher ERA surprises (|Δ|>1.0)]")
+            for _, r in perf_p.iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                era_prev = r["prev_ERA"] if pd.notna(r["prev_ERA"]) else 0
+                era_cur = r["ERA_num"] if pd.notna(r["ERA_num"]) else 0
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"IP={r['IP_dec']:>5.1f}  "
+                      f"ERA: {era_prev:.2f}→{era_cur:.2f} (Δ{r['delta_ERA']:+.2f})  "
+                      f"RA impact: {r['ra_impact_perf']:+.1f}")
 
-        # Missing foreign pitchers
-        all_p_raw = pitchers_raw[(pitchers_raw["year"] == yr) & (pitchers_raw["team"] == tm)]
-        all_p_raw = all_p_raw[all_p_raw["IP_dec"] >= MIN_IP]
-        model_players_p = set(yr_p["player"])
-        missing_p = all_p_raw[~all_p_raw["player"].isin(model_players_p)].copy()
-        missing_p["is_foreign"] = missing_p["player"].isin(foreign_names)
+        # Pitcher departures
+        dep_p_sorted = dep_p.sort_values("lost_ra", ascending=False)
+        if len(dep_p_sorted) > 0:
+            print(f"\n  [Pitcher departures]")
+            for _, r in dep_p_sorted.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                era = r["ERA_num"] if pd.notna(r["ERA_num"]) else 0
+                dest = f"→{r['new_team']}" if pd.notna(r.get("new_team")) else "→retired/2軍"
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"prev IP={r['IP_dec']:>5.1f}  ERA={era:.2f}  "
+                      f"lost RA={r['lost_ra']:.1f}  {dest}")
 
-        print(f"\n  [Pitchers in model: {len(yr_p)}  Missing: {len(missing_p)}]")
+        # Pitcher arrivals
+        arr_p_sorted = arr_p.sort_values("gained_ra", ascending=True)  # lower RA = better
+        if len(arr_p_sorted) > 0:
+            print(f"\n  [Pitcher arrivals]")
+            for _, r in arr_p_sorted.head(5).iterrows():
+                fg = " [FGN]" if r["player"] in foreign_names else ""
+                era = r["ERA_num"] if pd.notna(r["ERA_num"]) else 0
+                src = f"←{r['prev_team']}" if pd.notna(r.get("prev_team")) else "←rookie/2軍"
+                print(f"    {r['player']:10s}{fg:6s}  "
+                      f"IP={r['IP_dec']:>5.1f}  ERA={era:.2f}  "
+                      f"gained RA={r['gained_ra']:.1f}  {src}")
 
-        fgn_p = yr_p[yr_p["is_foreign"]]
-        jpn_p = yr_p[~yr_p["is_foreign"]]
+        # === Factor quantification ===
+        total_lost_rs = float(dep_h["lost_rs"].sum()) if len(dep_h) > 0 else 0
+        total_gained_rs = float(arr_h["gained_rs"].sum()) if len(arr_h) > 0 else 0
+        total_pa_impact = float(ret_h["rs_impact_pa"].sum()) if len(ret_h) > 0 else 0
+        total_perf_impact_h = float(ret_h["rs_impact_perf"].sum()) if len(ret_h) > 0 else 0
+        total_lost_ra = float(dep_p["lost_ra"].sum()) if len(dep_p) > 0 else 0
+        total_gained_ra = float(arr_p["gained_ra"].sum()) if len(arr_p) > 0 else 0
+        total_ip_impact = float(ret_p["ra_impact_ip"].sum()) if len(ret_p) > 0 else 0
+        total_perf_impact_p = float(ret_p["ra_impact_perf"].sum()) if len(ret_p) > 0 else 0
 
-        if len(fgn_p) > 0:
-            print(f"  Foreign pitchers IN MODEL ({len(fgn_p)}):")
-            for _, pp in fgn_p.sort_values("actual_IP", ascending=False).iterrows():
-                print(f"    {pp['player']:10s}  IP={pp['actual_IP']:>5.1f}  "
-                      f"ERA: actual={pp['actual']:.2f} M={pp['marcel']:.2f} S={pp['stan']:.2f}  "
-                      f"RA_err: M={pp['err_m']:+.1f} S={pp['err_s']:+.1f}  "
-                      f"{'✓Stan' if pp['stan_better'] else '✗Marcel'}")
+        print(f"\n  [Factor Summary (RS/RA impact)]")
+        print(f"    Roster turnover RS: lost={total_lost_rs:.1f}  gained={total_gained_rs:.1f}  "
+              f"net={total_gained_rs - total_lost_rs:+.1f}")
+        print(f"    PA change impact:   {total_pa_impact:+.1f}")
+        print(f"    wOBA change impact: {total_perf_impact_h:+.1f}")
+        print(f"    Roster turnover RA: lost={total_lost_ra:.1f}  gained={total_gained_ra:.1f}  "
+              f"net={total_gained_ra - total_lost_ra:+.1f}")
+        print(f"    IP change impact:   {total_ip_impact:+.1f}")
+        print(f"    ERA change impact:  {total_perf_impact_p:+.1f}")
 
-        missing_fgn_p = missing_p[missing_p["is_foreign"]]
-        missing_jpn_p = missing_p[~missing_p["is_foreign"]]
-        if len(missing_fgn_p) > 0:
-            total_fgn_ip = round(missing_fgn_p["IP_dec"].sum(), 1)
-            print(f"  Foreign pitchers MISSING ({len(missing_fgn_p)}, {total_fgn_ip} IP):")
-            for _, mp in missing_fgn_p.sort_values("IP_dec", ascending=False).iterrows():
-                era = mp["ERA_num"] if pd.notna(mp["ERA_num"]) else 0
-                print(f"    {mp['player']:10s}  IP={mp['IP_dec']:>5.1f}  ERA={era:.2f}")
-
-        if len(missing_jpn_p) > 0:
-            total_jpn_ip = round(missing_jpn_p["IP_dec"].sum(), 1)
-            print(f"  Japanese pitchers MISSING ({len(missing_jpn_p)}, {total_jpn_ip} IP):")
-            for _, mp in missing_jpn_p.sort_values("IP_dec", ascending=False).head(5).iterrows():
-                era = mp["ERA_num"] if pd.notna(mp["ERA_num"]) else 0
-                print(f"    {mp['player']:10s}  IP={mp['IP_dec']:>5.1f}  ERA={era:.2f}")
-
-        # --- Stan vs Marcel summary for this team-year ---
-        n_h_stan = int(yr_h["stan_better"].sum())
-        n_p_stan = int(yr_p["stan_better"].sum()) if len(yr_p) > 0 else 0
-        rs_err_m = float(yr_h["err_m"].sum())
-        rs_err_s = float(yr_h["err_s"].sum())
-        ra_err_m = float(yr_p["err_m"].sum()) if len(yr_p) > 0 else 0
-        ra_err_s = float(yr_p["err_s"].sum()) if len(yr_p) > 0 else 0
-
-        print(f"\n  Summary:")
-        print(f"    Hitters:  Stan better {n_h_stan}/{len(yr_h)}  "
-              f"RS_err Marcel={rs_err_m:+.1f}  Stan={rs_err_s:+.1f}")
-        print(f"    Pitchers: Stan better {n_p_stan}/{len(yr_p)}  "
-              f"RA_err Marcel={ra_err_m:+.1f}  Stan={ra_err_s:+.1f}")
-
-        # Foreign contribution to missing RS/RA
-        fgn_miss_rs = float(K_WOBA * missing_fgn_h["wOBA"].fillna(0).values @ missing_fgn_h["PA"].values) if len(missing_fgn_h) > 0 else 0
-        jpn_miss_rs = float(K_WOBA * missing_jpn_h["wOBA"].fillna(0).values @ missing_jpn_h["PA"].values) if len(missing_jpn_h) > 0 else 0
-        fgn_miss_ra = float((missing_fgn_p["ERA_num"].fillna(0) * missing_fgn_p["IP_dec"] / 9.0).sum()) if len(missing_fgn_p) > 0 else 0
-        jpn_miss_ra = float((missing_jpn_p["ERA_num"].fillna(0) * missing_jpn_p["IP_dec"] / 9.0).sum()) if len(missing_jpn_p) > 0 else 0
-
-        print(f"    Missing RS: foreign={fgn_miss_rs:.1f}  japanese={jpn_miss_rs:.1f}")
-        print(f"    Missing RA: foreign={fgn_miss_ra:.1f}  japanese={jpn_miss_ra:.1f}")
-
-        results.append({
+        all_factors.append({
             "year": yr, "team": tm,
-            "actual_W": int(row["W"]),
-            "W_marcel": round(float(row["W_marcel"]), 1),
-            "W_stan": round(float(row["W_stan"]), 1),
-            "err_M": round(float(row["err_M"]), 1),
-            "err_S": round(float(row["err_S"]), 1),
-            "n_hitters": len(yr_h), "n_pitchers": len(yr_p),
-            "n_missing_h": len(missing_h), "n_missing_p": len(missing_p),
-            "n_missing_foreign_h": len(missing_fgn_h),
-            "n_missing_foreign_p": len(missing_fgn_p),
-            "missing_foreign_PA": int(missing_fgn_h["PA"].sum()) if len(missing_fgn_h) > 0 else 0,
-            "missing_foreign_IP": round(float(missing_fgn_p["IP_dec"].sum()), 1) if len(missing_fgn_p) > 0 else 0,
-            "missing_foreign_RS": round(fgn_miss_rs, 1),
-            "missing_foreign_RA": round(fgn_miss_ra, 1),
-            "stan_better_h": f"{n_h_stan}/{len(yr_h)}",
-            "stan_better_p": f"{n_p_stan}/{len(yr_p)}",
+            "err_M": round(float(err_m), 1),
+            "pa_cov": round(float(row["PA_cov"]), 1),
+            "ip_cov": round(float(row["IP_cov"]), 1),
+            "n_departures_h": len(dep_h), "n_arrivals_h": len(arr_h),
+            "n_departures_p": len(dep_p), "n_arrivals_p": len(arr_p),
+            "n_pa_drops": len(pa_drops) if len(pa_drops) > 0 else 0,
+            "n_ip_drops": len(ip_drops) if len(ip_drops) > 0 else 0,
+            "n_woba_surprises": len(perf_h) if len(perf_h) > 0 else 0,
+            "n_era_surprises": len(perf_p) if len(perf_p) > 0 else 0,
+            "roster_net_rs": round(total_gained_rs - total_lost_rs, 1),
+            "perf_impact_rs": round(total_perf_impact_h, 1),
+            "roster_net_ra": round(total_gained_ra - total_lost_ra, 1),
+            "perf_impact_ra": round(total_perf_impact_p, 1),
         })
 
-    # --- Overall Stan effectiveness analysis ---
+    # === Cross-team pattern summary ===
     print("\n" + "=" * 70)
-    print("Stan Effectiveness: Where does Stan improve over Marcel?")
+    print("Cross-Team Pattern Summary")
     print("=" * 70)
 
-    h_all = h_df.copy()
-    h_all["is_foreign"] = h_all["player"].isin(foreign_names)
-    h_all["abs_err_m"] = (h_all["actual"] - h_all["marcel"]).abs()
-    h_all["abs_err_s"] = (h_all["actual"] - h_all["stan"]).abs()
-    h_all["stan_better"] = h_all["abs_err_s"] < h_all["abs_err_m"]
+    factors_df = pd.DataFrame(all_factors)
+    if len(factors_df) > 0:
+        over = factors_df[factors_df["err_M"] > 0]  # model too high
+        under = factors_df[factors_df["err_M"] < 0]  # model too low
 
-    p_all = p_df.copy()
-    p_all["is_foreign"] = p_all["player"].isin(foreign_names)
-    p_all["abs_err_m"] = (p_all["actual"] - p_all["marcel"]).abs()
-    p_all["abs_err_s"] = (p_all["actual"] - p_all["stan"]).abs()
-    p_all["stan_better"] = p_all["abs_err_s"] < p_all["abs_err_m"]
-
-    for label, df, metric in [("Hitters (wOBA)", h_all, "wOBA"),
-                                ("Pitchers (ERA)", p_all, "ERA")]:
-        print(f"\n  {label}:")
-        for group, sub in [("Japanese", df[~df["is_foreign"]]),
-                           ("Foreign", df[df["is_foreign"]])]:
-            n = len(sub)
-            if n == 0:
+        for label, sub in [("Overestimates (model > actual)", over),
+                           ("Underestimates (model < actual)", under)]:
+            if len(sub) == 0:
                 continue
-            n_stan = int(sub["stan_better"].sum())
-            mae_m = float(sub["abs_err_m"].mean())
-            mae_s = float(sub["abs_err_s"].mean())
-            print(f"    {group:>10s}: n={n:>4d}  Stan wins {n_stan}/{n} ({100*n_stan/n:.1f}%)  "
-                  f"MAE Marcel={mae_m:.4f}  Stan={mae_s:.4f}  Δ={mae_s-mae_m:+.4f}")
+            print(f"\n  {label}: n={len(sub)}")
+            print(f"    Avg PA_cov: {sub['pa_cov'].mean():.1f}%")
+            print(f"    Avg IP_cov: {sub['ip_cov'].mean():.1f}%")
+            print(f"    Avg departures: {sub['n_departures_h'].mean():.1f} hitters, "
+                  f"{sub['n_departures_p'].mean():.1f} pitchers")
+            print(f"    Avg arrivals:   {sub['n_arrivals_h'].mean():.1f} hitters, "
+                  f"{sub['n_arrivals_p'].mean():.1f} pitchers")
+            print(f"    Avg PA drops(>100):  {sub['n_pa_drops'].mean():.1f}")
+            print(f"    Avg IP drops(>30):   {sub['n_ip_drops'].mean():.1f}")
+            print(f"    Avg wOBA surprises:  {sub['n_woba_surprises'].mean():.1f}")
+            print(f"    Avg ERA surprises:   {sub['n_era_surprises'].mean():.1f}")
+            print(f"    Avg roster net RS:   {sub['roster_net_rs'].mean():+.1f}")
+            print(f"    Avg perf impact RS:  {sub['perf_impact_rs'].mean():+.1f}")
+            print(f"    Avg roster net RA:   {sub['roster_net_ra'].mean():+.1f}")
+            print(f"    Avg perf impact RA:  {sub['perf_impact_ra'].mean():+.1f}")
 
-        # By Marcel error magnitude (quintiles)
-        df["marcel_err_abs"] = (df["actual"] - df["marcel"]).abs()
-        df["quintile"] = pd.qcut(df["marcel_err_abs"], 5, labels=["Q1(small)", "Q2", "Q3", "Q4", "Q5(large)"])
-        print(f"\n    By Marcel error magnitude ({metric}):")
-        for q in ["Q1(small)", "Q2", "Q3", "Q4", "Q5(large)"]:
-            sub = df[df["quintile"] == q]
-            n = len(sub)
-            n_stan = int(sub["stan_better"].sum())
-            mae_m = float(sub["abs_err_m"].mean())
-            mae_s = float(sub["abs_err_s"].mean())
-            print(f"      {q:>10s}: n={n:>3d}  Stan wins {n_stan}/{n} ({100*n_stan/n:.1f}%)  "
-                  f"MAE M={mae_m:.4f}  S={mae_s:.4f}  Δ={mae_s-mae_m:+.4f}")
+        # Correlation: what factors best predict the error direction?
+        print(f"\n  Correlation with err_M:")
+        for col in ["pa_cov", "ip_cov", "n_departures_h", "n_arrivals_h",
+                     "n_pa_drops", "n_woba_surprises", "n_era_surprises",
+                     "roster_net_rs", "perf_impact_rs", "roster_net_ra", "perf_impact_ra"]:
+            corr = factors_df["err_M"].corr(factors_df[col])
+            print(f"    {col:>20s}: r={corr:+.3f}")
 
     # Save JSON
-    out = {"threshold": ERR_THRESHOLD, "big_misses": results}
+    out = {"threshold": ERR_THRESHOLD, "factors": all_factors}
     out_path = OUT_DIR / "big_miss_diagnosis.json"
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nSaved -> {out_path}")
