@@ -31,6 +31,8 @@ from scipy import stats
 # Allow importing stan_jpn_model from same directory
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from stan_jpn_model import (
+    MIN_IP,
+    MIN_PA,
     build_dataset,
     compute_fip_column,
     ip_to_decimal,
@@ -59,6 +61,125 @@ JPN_YEARS = list(range(2018, 2026))
 NPB_PYTH_EXP = 1.83
 NPB_HIST_RS = 535.0
 K_WOBA = 0.3256
+
+
+# ── Team-level helpers (Step 12) ─────────────────────────────────────────────
+
+
+def _load_raw_data():
+    """Load raw sabermetrics and pitcher data for team-level fixes."""
+    saber = pd.read_csv(RAW_DIR / "npb_sabermetrics_2015_2025.csv", encoding="utf-8-sig")
+    pitchers_raw = pd.read_csv(RAW_DIR / "npb_pitchers_2015_2025.csv", encoding="utf-8-sig")
+    pitchers_raw["IP_dec"] = pitchers_raw["IP"].apply(ip_to_decimal)
+    pitchers_raw["ERA_num"] = pd.to_numeric(pitchers_raw["ERA"], errors="coerce")
+    return saber, pitchers_raw
+
+
+def _reassign_teams(h_df, p_df, saber, pitchers_raw):
+    """Fix FA attribution: replace team with actual year-t team from raw data.
+
+    For mid-season trades, the team with more PA/IP is used.
+    """
+    h_df = h_df.copy()
+    p_df = p_df.copy()
+
+    # Hitter lookup: (player, year) → team (keep team with max PA)
+    h_lookup = (
+        saber[saber["PA"] >= MIN_PA]
+        .sort_values("PA", ascending=False)
+        .drop_duplicates(subset=["player", "year"], keep="first")
+        .set_index(["player", "year"])["team"]
+    )
+    for idx, row in h_df.iterrows():
+        key = (row["player"], row["year"])
+        if key in h_lookup.index:
+            h_df.at[idx, "team"] = h_lookup[key]
+
+    # Pitcher lookup: (player, year) → team (keep team with max IP)
+    p_lookup = (
+        pitchers_raw[pitchers_raw["IP_dec"] >= MIN_IP]
+        .sort_values("IP_dec", ascending=False)
+        .drop_duplicates(subset=["player", "year"], keep="first")
+        .set_index(["player", "year"])["team"]
+    )
+    for idx, row in p_df.iterrows():
+        key = (row["player"], row["year"])
+        if key in p_lookup.index:
+            p_df.at[idx, "team"] = p_lookup[key]
+
+    return h_df, p_df
+
+
+def _compute_league_averages(saber, pitchers_raw):
+    """Compute PA-weighted wOBA and IP-weighted ERA per year for imputation."""
+    lg_woba = {}
+    for yr, grp in saber[saber["PA"] >= MIN_PA].groupby("year"):
+        total_pa = grp["PA"].sum()
+        if total_pa > 0:
+            lg_woba[yr] = float((grp["wOBA"] * grp["PA"]).sum() / total_pa)
+
+    lg_era = {}
+    for yr, grp in pitchers_raw.groupby("year"):
+        sub = grp[(grp["IP_dec"] >= MIN_IP) & grp["ERA_num"].notna()]
+        total_ip = sub["IP_dec"].sum()
+        if total_ip > 0:
+            lg_era[yr] = float((sub["ERA_num"] * sub["IP_dec"]).sum() / total_ip)
+
+    return lg_woba, lg_era
+
+
+def _impute_missing_players(h_df, p_df, saber, pitchers_raw, lg_woba, lg_era):
+    """Compute imputed RS/RA for missing players and coverage rates.
+
+    Returns dict keyed by (year, team) with imputed_rs, imputed_ra,
+    PA_cov, IP_cov values. Same imputation is added to both Marcel
+    and Stan to keep the comparison fair.
+    """
+    result = {}
+
+    for yr in sorted(h_df["year"].unique()):
+        # Actual team PA totals (all players)
+        yr_saber = saber[saber["year"] == yr]
+        actual_pa = yr_saber.groupby("team")["PA"].sum()
+
+        # Actual team IP totals (all pitchers)
+        yr_pitch = pitchers_raw[pitchers_raw["year"] == yr]
+        actual_ip = yr_pitch.groupby("team")["IP_dec"].sum()
+
+        # Model PA/IP (after reassignment)
+        yr_h = h_df[h_df["year"] == yr]
+        model_pa = yr_h.groupby("team")["actual_PA"].sum()
+
+        yr_p = p_df[p_df["year"] == yr]
+        model_ip = yr_p.groupby("team")["actual_IP"].sum()
+
+        teams = set(actual_pa.index) | set(actual_ip.index)
+        woba_avg = lg_woba.get(yr, 0.310)
+        era_avg = lg_era.get(yr, 3.80)
+
+        for team in teams:
+            act_pa = float(actual_pa.get(team, 0))
+            mod_pa = float(model_pa.get(team, 0))
+            act_ip = float(actual_ip.get(team, 0))
+            mod_ip = float(model_ip.get(team, 0))
+
+            missing_pa = max(act_pa - mod_pa, 0)
+            missing_ip = max(act_ip - mod_ip, 0)
+
+            imputed_rs = K_WOBA * woba_avg * missing_pa
+            imputed_ra = era_avg * missing_ip / 9.0
+
+            pa_cov = mod_pa / act_pa * 100 if act_pa > 0 else 0
+            ip_cov = mod_ip / act_ip * 100 if act_ip > 0 else 0
+
+            result[(yr, team)] = {
+                "imputed_rs": imputed_rs,
+                "imputed_ra": imputed_ra,
+                "PA_cov": round(pa_cov, 1),
+                "IP_cov": round(ip_cov, 1),
+            }
+
+    return result
 
 
 def ridge_fit_predict(X_train, y_train, X_test, alpha):
@@ -292,7 +413,13 @@ def player_level_tests(h_df, p_df, label="All years"):
 
 
 def team_level_mae(h_df, p_df, years=None, label="All years"):
-    """Compute team-level Pythagorean MAE from player-level LOO-CV predictions."""
+    """Compute team-level Pythagorean MAE from player-level LOO-CV predictions.
+
+    Step 12 fixes:
+      1. FA reassignment — use actual year-t team from raw data
+      2. Missing player imputation — fill uncovered PA/IP with league avg
+      3. Coverage display — show PA_cov/IP_cov per team-year
+    """
     actual = pd.read_csv(
         "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
         "/data/projections/pythagorean_2015_2025.csv",
@@ -303,6 +430,14 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
         h_df = h_df[h_df["year"].isin(years)]
         p_df = p_df[p_df["year"].isin(years)]
         actual = actual[actual["year"].isin(years)]
+
+    # Step 12-1: Reassign teams using actual year-t data
+    saber, pitchers_raw = _load_raw_data()
+    h_df, p_df = _reassign_teams(h_df, p_df, saber, pitchers_raw)
+
+    # Step 12-2: Compute league averages and imputation
+    lg_woba, lg_era = _compute_league_averages(saber, pitchers_raw)
+    impute = _impute_missing_players(h_df, p_df, saber, pitchers_raw, lg_woba, lg_era)
 
     # RS from hitters
     h = h_df.copy()
@@ -320,6 +455,22 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
     merged = team.merge(
         actual[["year", "team", "G", "W"]], on=["year", "team"], how="inner"
     )
+
+    # Step 12-2: Add imputed RS/RA (same amount for both models → fair comparison)
+    merged["imputed_rs"] = merged.apply(
+        lambda r: impute.get((r["year"], r["team"]), {}).get("imputed_rs", 0), axis=1)
+    merged["imputed_ra"] = merged.apply(
+        lambda r: impute.get((r["year"], r["team"]), {}).get("imputed_ra", 0), axis=1)
+    merged["rs_marcel"] += merged["imputed_rs"]
+    merged["rs_stan"] += merged["imputed_rs"]
+    merged["ra_marcel"] += merged["imputed_ra"]
+    merged["ra_stan"] += merged["imputed_ra"]
+
+    # Step 12-3: Add coverage columns
+    merged["PA_cov"] = merged.apply(
+        lambda r: impute.get((r["year"], r["team"]), {}).get("PA_cov", 0), axis=1)
+    merged["IP_cov"] = merged.apply(
+        lambda r: impute.get((r["year"], r["team"]), {}).get("IP_cov", 0), axis=1)
 
     # Marcel-anchored scaling
     for yr in merged["year"].unique():
@@ -367,11 +518,15 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
     for yr, grp in merged.groupby("year"):
         m = float(grp["err_marcel"].abs().mean())
         s = float(grp["err_stan"].abs().mean())
+        pa_c = float(grp["PA_cov"].mean())
+        ip_c = float(grp["IP_cov"].mean())
         yearly[int(yr)] = {
             "marcel": round(m, 3), "stan": round(s, 3),
             "delta": round(s - m, 3), "n": len(grp),
+            "avg_PA_cov": round(pa_c, 1), "avg_IP_cov": round(ip_c, 1),
         }
-        print(f"    {yr}: Marcel={m:.3f}  Stan={s:.3f}  Δ={s - m:+.3f}")
+        print(f"    {yr}: Marcel={m:.3f}  Stan={s:.3f}  Δ={s - m:+.3f}  "
+              f"PA_cov={pa_c:.1f}%  IP_cov={ip_c:.1f}%")
 
     summary = {
         "mae_marcel": round(mae_m, 3),
@@ -845,7 +1000,8 @@ def main():
     # ── 7. Team-level detail table (2018-2025) ──
     if len(team_detail) > 0:
         print("\n[7] Team-level detail table (2018-2025)")
-        td = team_detail[["year", "team", "W", "W_marcel", "W_stan"]].copy()
+        td = team_detail[["year", "team", "W", "W_marcel", "W_stan",
+                           "PA_cov", "IP_cov"]].copy()
         td["W_marcel"] = td["W_marcel"].round(1)
         td["W_stan"] = td["W_stan"].round(1)
         td["err_M"] = (td["W_marcel"] - td["W"]).round(1)
@@ -854,22 +1010,27 @@ def main():
         td = td.rename(columns={"W": "actual_W"})
 
         print(f"\n  {'Year':>4}  {'Team':<8}  {'Actual':>6}  {'Marcel':>6}  "
-              f"{'Stan':>6}  {'err_M':>6}  {'err_S':>6}")
-        print("  " + "-" * 56)
+              f"{'Stan':>6}  {'err_M':>6}  {'err_S':>6}  "
+              f"{'PA%':>5}  {'IP%':>5}")
+        print("  " + "-" * 72)
         for _, row in td.iterrows():
             print(f"  {int(row['year']):>4}  {row['team']:<8}  "
                   f"{int(row['actual_W']):>6}  {row['W_marcel']:>6.1f}  "
                   f"{row['W_stan']:>6.1f}  {row['err_M']:>+6.1f}  "
-                  f"{row['err_S']:>+6.1f}")
+                  f"{row['err_S']:>+6.1f}  "
+                  f"{row['PA_cov']:>5.1f}  {row['IP_cov']:>5.1f}")
 
         # Per-year MAE summary
-        print(f"\n  {'Year':>4}  {'MAE_M':>6}  {'MAE_S':>6}  {'Δ':>6}")
+        print(f"\n  {'Year':>4}  {'MAE_M':>6}  {'MAE_S':>6}  {'Δ':>6}  "
+              f"{'avgPA%':>6}  {'avgIP%':>6}")
         for yr in sorted(td["year"].unique()):
             sub = td[td["year"] == yr]
             mae_m = sub["err_M"].abs().mean()
             mae_s = sub["err_S"].abs().mean()
+            pa_c = sub["PA_cov"].mean()
+            ip_c = sub["IP_cov"].mean()
             print(f"  {int(yr):>4}  {mae_m:>6.1f}  {mae_s:>6.1f}  "
-                  f"{mae_s - mae_m:>+6.1f}")
+                  f"{mae_s - mae_m:>+6.1f}  {pa_c:>6.1f}  {ip_c:>6.1f}")
 
         # Save CSV
         csv_path = OUT_DIR / "team_detail_2018_2025.csv"
