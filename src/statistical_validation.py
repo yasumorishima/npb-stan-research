@@ -385,6 +385,166 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
     return summary, merged
 
 
+# ── Analysis 8: Team prediction anomaly diagnosis ────────────────────────────
+
+
+def diagnose_team_anomalies(h_df, p_df):
+    """Diagnose team prediction anomalies by checking player coverage rates.
+
+    Compares actual team PA/IP totals (all players) vs model PA/IP
+    (only players with Marcel predictions + age data).
+    Low coverage → distorted RS/RA → bad win predictions.
+    """
+    saber = pd.read_csv(RAW_DIR / "npb_sabermetrics_2015_2025.csv", encoding="utf-8-sig")
+    pitchers_raw = pd.read_csv(RAW_DIR / "npb_pitchers_2015_2025.csv", encoding="utf-8-sig")
+    actual = pd.read_csv(
+        "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
+        "/data/projections/pythagorean_2015_2025.csv",
+        encoding="utf-8-sig",
+    )
+
+    rows = []
+    for yr in sorted(h_df["year"].unique()):
+        # Actual team PA (all players, no filter)
+        yr_saber = saber[saber["year"] == yr]
+        actual_pa_team = yr_saber.groupby("team")["PA"].sum()
+
+        # Model PA (only players in LOO-CV results)
+        yr_h = h_df[h_df["year"] == yr]
+        model_pa_team = yr_h.groupby("team")["actual_PA"].sum()
+
+        # Actual team IP (all pitchers, no filter)
+        yr_pitch = pitchers_raw[pitchers_raw["year"] == yr].copy()
+        yr_pitch["IP_dec"] = yr_pitch["IP"].apply(ip_to_decimal)
+        actual_ip_team = yr_pitch.groupby("team")["IP_dec"].sum()
+
+        # Model IP (only pitchers in LOO-CV results)
+        yr_p = p_df[p_df["year"] == yr]
+        model_ip_team = yr_p.groupby("team")["actual_IP"].sum()
+
+        # Raw RS/RA from model (before scaling)
+        rs_raw = (yr_h.assign(rs=K_WOBA * yr_h["marcel"] * yr_h["actual_PA"])
+                  .groupby("team")["rs"].sum())
+        ra_raw = (yr_p.assign(ra=yr_p["marcel"] * yr_p["actual_IP"] / 9.0)
+                  .groupby("team")["ra"].sum())
+
+        # Actual RS/RA from pythagorean CSV
+        yr_act = actual[actual["year"] == yr].set_index("team")
+
+        teams = sorted(
+            set(actual_pa_team.index) & set(actual_ip_team.index)
+            & set(yr_act.index)
+        )
+        for team in teams:
+            act_pa = int(actual_pa_team.get(team, 0))
+            mod_pa = int(model_pa_team.get(team, 0))
+            act_ip = float(actual_ip_team.get(team, 0))
+            mod_ip = float(model_ip_team.get(team, 0))
+            pa_cov = mod_pa / act_pa * 100 if act_pa > 0 else 0
+            ip_cov = mod_ip / act_ip * 100 if act_ip > 0 else 0
+
+            act_rs = float(yr_act.loc[team, "RS"]) if "RS" in yr_act.columns else 0
+            act_ra = float(yr_act.loc[team, "RA"]) if "RA" in yr_act.columns else 0
+            raw_rs = float(rs_raw.get(team, 0))
+            raw_ra = float(ra_raw.get(team, 0))
+
+            rows.append({
+                "year": yr, "team": team,
+                "actual_PA": act_pa, "model_PA": mod_pa,
+                "PA_cov": round(pa_cov, 1),
+                "actual_IP": round(act_ip, 1), "model_IP": round(mod_ip, 1),
+                "IP_cov": round(ip_cov, 1),
+                "actual_RS": act_rs, "model_RS_raw": round(raw_rs, 1),
+                "actual_RA": act_ra, "model_RA_raw": round(raw_ra, 1),
+                "actual_W": int(yr_act.loc[team, "W"]),
+                "n_hitters": len(yr_h[yr_h["team"] == team]),
+                "n_pitchers": len(yr_p[yr_p["team"] == team]),
+            })
+
+    cov_df = pd.DataFrame(rows)
+
+    # ── Print per-year average coverage ──
+    print("\n  Per-year average coverage:")
+    print(f"  {'Year':>4}  {'PA%':>5}  {'IP%':>5}  {'PA_range':>16}  {'IP_range':>16}  "
+          f"{'nH':>3}  {'nP':>3}")
+    for yr in sorted(cov_df["year"].unique()):
+        sub = cov_df[cov_df["year"] == yr]
+        print(f"  {yr:>4}  {sub['PA_cov'].mean():>5.1f}  {sub['IP_cov'].mean():>5.1f}  "
+              f"{sub['PA_cov'].min():>5.1f}-{sub['PA_cov'].max():>5.1f}%  "
+              f"{sub['IP_cov'].min():>5.1f}-{sub['IP_cov'].max():>5.1f}%  "
+              f"{sub['n_hitters'].mean():>3.0f}  {sub['n_pitchers'].mean():>3.0f}")
+
+    # ── Worst PA coverage teams ──
+    print("\n  Top 10 worst PA coverage:")
+    print(f"  {'Year':>4}  {'Team':<6}  {'ActPA':>5}  {'ModPA':>5}  {'PA%':>5}  "
+          f"{'ActIP':>6}  {'ModIP':>6}  {'IP%':>5}  {'W':>3}  "
+          f"{'ActRS':>5}  {'RawRS':>5}  {'ActRA':>5}  {'RawRA':>5}")
+    worst = cov_df.nsmallest(10, "PA_cov")
+    for _, r in worst.iterrows():
+        print(f"  {int(r['year']):>4}  {r['team']:<6}  "
+              f"{r['actual_PA']:>5}  {r['model_PA']:>5}  {r['PA_cov']:>5.1f}  "
+              f"{r['actual_IP']:>6.1f}  {r['model_IP']:>6.1f}  {r['IP_cov']:>5.1f}  "
+              f"{r['actual_W']:>3}  "
+              f"{r['actual_RS']:>5.0f}  {r['model_RS_raw']:>5.1f}  "
+              f"{r['actual_RA']:>5.0f}  {r['model_RA_raw']:>5.1f}")
+
+    # ── Missing hitters for worst 5 teams ──
+    print("\n  Missing hitters in worst-coverage teams:")
+    for _, r in worst.head(5).iterrows():
+        yr, team = int(r["year"]), r["team"]
+        yr_team = saber[(saber["year"] == yr) & (saber["team"] == team)]
+        yr_team = yr_team[yr_team["PA"] >= 50]  # significant contributors
+        model_players = set(h_df[(h_df["year"] == yr) & (h_df["team"] == team)]["player"])
+        missing = yr_team[~yr_team["player"].isin(model_players)]
+        missing = missing.sort_values("PA", ascending=False)
+        if len(missing) > 0:
+            total_pa = int(missing["PA"].sum())
+            print(f"\n  {yr} {team}: {len(missing)} missing, {total_pa} PA gap")
+            for _, m in missing.head(8).iterrows():
+                woba = m["wOBA"] if pd.notna(m["wOBA"]) else 0
+                print(f"    {m['player']}: {int(m['PA'])} PA, wOBA={woba:.3f}")
+
+    # ── Missing pitchers for worst IP coverage ──
+    print("\n  Missing pitchers in worst IP-coverage teams:")
+    worst_ip = cov_df.nsmallest(5, "IP_cov")
+    for _, r in worst_ip.iterrows():
+        yr, team = int(r["year"]), r["team"]
+        yr_team = pitchers_raw[(pitchers_raw["year"] == yr)
+                               & (pitchers_raw["team"] == team)].copy()
+        yr_team["IP_dec"] = yr_team["IP"].apply(ip_to_decimal)
+        yr_team = yr_team[yr_team["IP_dec"] >= 20]
+        model_players = set(p_df[(p_df["year"] == yr) & (p_df["team"] == team)]["player"])
+        missing = yr_team[~yr_team["player"].isin(model_players)]
+        missing = missing.sort_values("IP_dec", ascending=False)
+        if len(missing) > 0:
+            total_ip = round(missing["IP_dec"].sum(), 1)
+            print(f"\n  {yr} {team}: {len(missing)} missing, {total_ip} IP gap")
+            for _, m in missing.head(8).iterrows():
+                era = pd.to_numeric(m["ERA"], errors="coerce")
+                era_s = f"{era:.2f}" if pd.notna(era) else "N/A"
+                print(f"    {m['player']}: {m['IP_dec']:.1f} IP, ERA={era_s}")
+
+    # ── Coverage vs prediction error correlation ──
+    # Merge with team_detail to check if low coverage → bigger errors
+    print("\n  Coverage vs prediction error (PA_cov → |err_Marcel|):")
+    # Sort by PA coverage and show correlation
+    corr_pa = cov_df[["PA_cov", "actual_W"]].copy()
+    # We don't have err_Marcel directly here, but we can flag teams
+    low = cov_df[cov_df["PA_cov"] < 70]
+    high = cov_df[cov_df["PA_cov"] >= 70]
+    print(f"    Low coverage (<70%):  {len(low)} team-years, "
+          f"avg PA_cov={low['PA_cov'].mean():.1f}%")
+    print(f"    High coverage (≥70%): {len(high)} team-years, "
+          f"avg PA_cov={high['PA_cov'].mean():.1f}%")
+
+    # Save coverage CSV
+    csv_path = OUT_DIR / "team_coverage_diagnosis.csv"
+    cov_df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+    print(f"\n  Saved -> {csv_path}")
+
+    return cov_df
+
+
 # ── Analysis 3: Foreign Player LOO-CV ─────────────────────────────────────────
 
 
@@ -715,6 +875,11 @@ def main():
         csv_path = OUT_DIR / "team_detail_2018_2025.csv"
         td.to_csv(csv_path, index=False, encoding="utf-8-sig")
         print(f"\n  Saved -> {csv_path}")
+
+    # ── 8. Team prediction anomaly diagnosis ──
+    print("\n[8] Team Prediction Anomaly Diagnosis")
+    print("=" * 70)
+    coverage_df = diagnose_team_anomalies(h_df, p_df)
 
     # ── Save results ──
     output = {
