@@ -2,11 +2,11 @@
   "years": [
     {
       "year": 2018,
-      "pa_cov_pct": 95.3,
+      "pa_cov_pct": 97.3,
       "ip_cov_pct": 97.6,
       "total_pa": 65768,
       "total_ip": 15291.7,
-      "missing_pa": 3066,
+      "missing_pa": 1805,
       "missing_ip": 362.7,
       "hitter_categories": {
         "foreign_1st": {
@@ -37,14 +37,10 @@
           ]
         },
         "rookie": {
-          "pa": 549,
-          "pct_of_total": 0.8,
-          "n": 55,
+          "pa": 465,
+          "pct_of_total": 0.7,
+          "n": 54,
           "top_examples": [
-            [
-              "山崎 剛",
-              84
-            ],
             [
               "塩見 泰隆",
               26
@@ -60,6 +56,10 @@
             [
               "才木 浩人",
               25
+            ],
+            [
+              "岩見 雅紀",
+              24
             ]
           ]
         },
@@ -114,33 +114,6 @@
             [
               "細谷 圭",
               27
-            ]
-          ]
-        },
-        "no_birthday": {
-          "pa": 1177,
-          "pct_of_total": 1.8,
-          "n": 6,
-          "top_examples": [
-            [
-              "會沢 翼",
-              377
-            ],
-            [
-              "島 基宏",
-              361
-            ],
-            [
-              "亀沢 恭平",
-              206
-            ],
-            [
-              "高山 俊",
-              134
-            ],
-            [
-              "聖沢 諒",
-              69
             ]
           ]
         }
@@ -258,11 +231,11 @@
     },
     {
       "year": 2019,
-      "pa_cov_pct": 95.5,
+      "pa_cov_pct": 97.4,
       "ip_cov_pct": 97.3,
       "total_pa": 65589,
       "total_ip": 15334.7,
-      "missing_pa": 2944,
+      "missing_pa": 1708,
       "missing_ip": 410.0,
       "hitter_categories": {
         "foreign_1st": {
@@ -293,18 +266,10 @@
           ]
         },
         "rookie": {
-          "pa": 683,
-          "pct_of_total": 1.0,
-          "n": 61,
+          "pa": 404,
+          "pct_of_total": 0.6,
+          "n": 59,
           "top_examples": [
-            [
-              "渡辺 佳明",
-              245
-            ],
-            [
-              "高橋 優貴",
-              34
-            ],
             [
               "渡辺 勝",
               29
@@ -316,6 +281,14 @@
             [
               "鈴木 将平",
               28
+            ],
+            [
+              "戸川 大輔",
+              25
+            ],
+            [
+              "コラス",
+              21
             ]
           ]
         },
@@ -370,33 +343,6 @@
             [
               "原 樹理",
               26
-            ]
-          ]
-        },
-        "no_birthday": {
-          "pa": 957,
-          "pct_of_total": 1.5,
-          "n": 5,
-          "top_examples": [
-            [
-              "會沢 翼",
-              447
-            ],
-            [
-              "高山 俊",
-              300
-            ],
-            [
-              "島 基宏",
-              131
-            ],
-            [
-              "亀沢 恭平",
-              49
-            ],
-            [
-              "山崎 剛",
-              30
             ]
           ]
         }
@@ -514,11 +460,11 @@
     },
     {
       "year": 2020,
-      "pa_cov_pct": 95.9,
+      "pa_cov_pct": 96.8,
       "ip_cov_pct": 97.2,
       "total_pa": 54171,
       "total_ip": 12680.7,
-      "missing_pa": 2237,
+      "missing_pa": 1751,
       "missing_ip": 355.3,
       "hitter_categories": {
         "foreign_1st": {
@@ -628,33 +574,6 @@
               27
             ]
           ]
-        },
-        "no_birthday": {
-          "pa": 486,
-          "pct_of_total": 0.9,
-          "n": 5,
-          "top_examples": [
-            [
-              "會沢 翼",
-              263
-            ],
-            [
-              "渡辺 佳明",
-              95
-            ],
-            [
-              "高山 俊",
-              52
-            ],
-            [
-              "島 基宏",
-              45
-            ],
-            [
-              "浜口 遥大",
-              31
-            ]
-          ]
         }
       },
       "pitcher_categories": {
@@ -762,11 +681,11 @@
     },
     {
       "year": 2021,
-      "pa_cov_pct": 95.9,
+      "pa_cov_pct": 96.9,
       "ip_cov_pct": 97.6,
       "total_pa": 63443,
       "total_ip": 15053.7,
-      "missing_pa": 2589,
+      "missing_pa": 1960,
       "missing_ip": 365.0,
       "hitter_categories": {
         "foreign_1st": {
@@ -824,14 +743,10 @@
           ]
         },
         "below_threshold": {
-          "pa": 598,
-          "pct_of_total": 0.9,
-          "n": 73,
+          "pa": 529,
+          "pct_of_total": 0.8,
+          "n": 72,
           "top_examples": [
-            [
-              "高部 瑛斗",
-              69
-            ],
             [
               "宜保 翔",
               28
@@ -846,6 +761,10 @@
             ],
             [
               "高橋 昂也",
+              25
+            ],
+            [
+              "松葉 貴大",
               25
             ]
           ]
@@ -874,29 +793,6 @@
             [
               "大下 誠一郎",
               27
-            ]
-          ]
-        },
-        "no_birthday": {
-          "pa": 560,
-          "pct_of_total": 0.9,
-          "n": 4,
-          "top_examples": [
-            [
-              "會沢 翼",
-              204
-            ],
-            [
-              "山崎 剛",
-              194
-            ],
-            [
-              "渡辺 佳明",
-              113
-            ],
-            [
-              "高橋 優貴",
-              49
             ]
           ]
         }
@@ -998,11 +894,11 @@
     },
     {
       "year": 2022,
-      "pa_cov_pct": 94.7,
+      "pa_cov_pct": 97.1,
       "ip_cov_pct": 97.6,
       "total_pa": 63962,
       "total_ip": 15327.7,
-      "missing_pa": 3410,
+      "missing_pa": 1866,
       "missing_ip": 363.0,
       "hitter_categories": {
         "foreign_1st": {
@@ -1033,18 +929,10 @@
           ]
         },
         "rookie": {
-          "pa": 544,
-          "pct_of_total": 0.9,
-          "n": 57,
+          "pa": 409,
+          "pct_of_total": 0.6,
+          "n": 55,
           "top_examples": [
-            [
-              "滝沢 夏央",
-              91
-            ],
-            [
-              "高橋 宏斗",
-              44
-            ],
             [
               "高寺 望夢",
               27
@@ -1056,6 +944,14 @@
             [
               "岡田 悠希",
               22
+            ],
+            [
+              "池田 来翔",
+              22
+            ],
+            [
+              "池田 陵真",
+              20
             ]
           ]
         },
@@ -1110,33 +1006,6 @@
             [
               "元山 飛優",
               28
-            ]
-          ]
-        },
-        "no_birthday": {
-          "pa": 1409,
-          "pct_of_total": 2.2,
-          "n": 6,
-          "top_examples": [
-            [
-              "高部 瑛斗",
-              608
-            ],
-            [
-              "會沢 翼",
-              325
-            ],
-            [
-              "山崎 剛",
-              218
-            ],
-            [
-              "渡辺 佳明",
-              168
-            ],
-            [
-              "高山 俊",
-              56
             ]
           ]
         }
@@ -1227,11 +1096,11 @@
     },
     {
       "year": 2023,
-      "pa_cov_pct": 96.5,
+      "pa_cov_pct": 97.5,
       "ip_cov_pct": 98.0,
       "total_pa": 64039,
       "total_ip": 15341.7,
-      "missing_pa": 2270,
+      "missing_pa": 1583,
       "missing_ip": 300.7,
       "hitter_categories": {
         "foreign_1st": {
@@ -1262,18 +1131,10 @@
           ]
         },
         "rookie": {
-          "pa": 355,
-          "pct_of_total": 0.6,
-          "n": 38,
+          "pa": 211,
+          "pct_of_total": 0.3,
+          "n": 36,
           "top_examples": [
-            [
-              "矢沢 宏太",
-              107
-            ],
-            [
-              "沢井 廉",
-              37
-            ],
             [
               "北村 恵吾",
               23
@@ -1285,6 +1146,14 @@
             [
               "生海",
               21
+            ],
+            [
+              "吉村 貢司郎",
+              19
+            ],
+            [
+              "萩尾 匡也",
+              16
             ]
           ]
         },
@@ -1339,29 +1208,6 @@
             [
               "福田 永将",
               26
-            ]
-          ]
-        },
-        "no_birthday": {
-          "pa": 543,
-          "pct_of_total": 0.8,
-          "n": 4,
-          "top_examples": [
-            [
-              "山崎 剛",
-              307
-            ],
-            [
-              "會沢 翼",
-              133
-            ],
-            [
-              "渡辺 佳明",
-              57
-            ],
-            [
-              "高橋 宏斗",
-              46
             ]
           ]
         }
@@ -1467,11 +1313,11 @@
     },
     {
       "year": 2024,
-      "pa_cov_pct": 95.9,
+      "pa_cov_pct": 97.1,
       "ip_cov_pct": 98.0,
       "total_pa": 63761,
       "total_ip": 15375.7,
-      "missing_pa": 2641,
+      "missing_pa": 1858,
       "missing_ip": 308.3,
       "hitter_categories": {
         "foreign_1st": {
@@ -1581,33 +1427,6 @@
               27
             ]
           ]
-        },
-        "no_birthday": {
-          "pa": 783,
-          "pct_of_total": 1.2,
-          "n": 5,
-          "top_examples": [
-            [
-              "高部 瑛斗",
-              287
-            ],
-            [
-              "會沢 翼",
-              159
-            ],
-            [
-              "渡辺 佳明",
-              154
-            ],
-            [
-              "滝沢 夏央",
-              137
-            ],
-            [
-              "高橋 宏斗",
-              46
-            ]
-          ]
         }
       },
       "pitcher_categories": {
@@ -1707,11 +1526,11 @@
     },
     {
       "year": 2025,
-      "pa_cov_pct": 94.7,
+      "pa_cov_pct": 96.7,
       "ip_cov_pct": 97.6,
       "total_pa": 62880,
       "total_ip": 15391.3,
-      "missing_pa": 3355,
+      "missing_pa": 2054,
       "missing_ip": 367.3,
       "hitter_categories": {
         "foreign_1st": {
@@ -1821,33 +1640,6 @@
               26
             ]
           ]
-        },
-        "no_birthday": {
-          "pa": 1301,
-          "pct_of_total": 2.1,
-          "n": 6,
-          "top_examples": [
-            [
-              "滝沢 夏央",
-              438
-            ],
-            [
-              "高部 瑛斗",
-              384
-            ],
-            [
-              "矢沢 宏太",
-              182
-            ],
-            [
-              "渡辺 佳明",
-              166
-            ],
-            [
-              "沢井 廉",
-              77
-            ]
-          ]
         }
       },
       "pitcher_categories": {
@@ -1949,29 +1741,24 @@
   "summary": {
     "hitter_missing_pa_breakdown": {
       "below_threshold": {
-        "pa": 4179,
+        "pa": 4110,
         "pct_of_total": 0.8,
-        "pct_of_missing": 18.6
+        "pct_of_missing": 28.2
       },
       "foreign_1st": {
         "pa": 523,
         "pct_of_total": 0.1,
-        "pct_of_missing": 2.3
+        "pct_of_missing": 3.6
       },
       "low_pa_current": {
         "pa": 6863,
         "pct_of_total": 1.4,
-        "pct_of_missing": 30.5
-      },
-      "no_birthday": {
-        "pa": 7216,
-        "pct_of_total": 1.4,
-        "pct_of_missing": 32.1
+        "pct_of_missing": 47.1
       },
       "rookie": {
-        "pa": 3731,
-        "pct_of_total": 0.7,
-        "pct_of_missing": 16.6
+        "pa": 3089,
+        "pct_of_total": 0.6,
+        "pct_of_missing": 21.2
       }
     },
     "pitcher_missing_ip_breakdown": {
