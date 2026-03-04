@@ -373,7 +373,7 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
         }
         print(f"    {yr}: Marcel={m:.3f}  Stan={s:.3f}  Δ={s - m:+.3f}")
 
-    return {
+    summary = {
         "mae_marcel": round(mae_m, 3),
         "mae_stan": round(mae_s, 3),
         "delta_mae": round(mae_s - mae_m, 3),
@@ -382,6 +382,7 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
         "n_team_years": len(merged),
         "yearly": yearly,
     }
+    return summary, merged
 
 
 # ── Analysis 3: Foreign Player LOO-CV ─────────────────────────────────────────
@@ -605,7 +606,7 @@ def main():
 
     # 1b. Team-level MAE
     print("\n[1b] Team-level MAE — ALL years")
-    team_all = team_level_mae(h_df, p_df, label="All 8 years (λ=1.0)")
+    team_all, team_detail = team_level_mae(h_df, p_df, label="All 8 years (λ=1.0)")
 
     # ── 2. 2021 (COVID) exclusion ──
     print("\n[2] 2021 exclusion — 7-year results")
@@ -614,8 +615,8 @@ def main():
     years_no21 = [y for y in JPN_YEARS if y != 2021]
 
     player_no21 = player_level_tests(h_no21, p_no21, "Excluding 2021 (λ=1.0)")
-    team_no21 = team_level_mae(h_no21, p_no21, years=years_no21,
-                               label="Excluding 2021 (λ=1.0)")
+    team_no21, _ = team_level_mae(h_no21, p_no21, years=years_no21,
+                                  label="Excluding 2021 (λ=1.0)")
 
     # ── 3. Foreign player LOO-CV ──
     print("\n[3] Foreign Player Stan v1 LOO-CV (2015-2025)")
@@ -680,6 +681,40 @@ def main():
                   f"MAE Δ={pitcher_fip_k9_results['delta_mae']:+.5f}")
     else:
         print("\n[6] K/9 + BB/9 — SKIPPED (no data)")
+
+    # ── 7. Team-level detail table (2018-2025) ──
+    if len(team_detail) > 0:
+        print("\n[7] Team-level detail table (2018-2025)")
+        td = team_detail[["year", "team", "W", "W_marcel", "W_stan"]].copy()
+        td["W_marcel"] = td["W_marcel"].round(1)
+        td["W_stan"] = td["W_stan"].round(1)
+        td["err_M"] = (td["W_marcel"] - td["W"]).round(1)
+        td["err_S"] = (td["W_stan"] - td["W"]).round(1)
+        td = td.sort_values(["year", "team"]).reset_index(drop=True)
+        td = td.rename(columns={"W": "actual_W"})
+
+        print(f"\n  {'Year':>4}  {'Team':<8}  {'Actual':>6}  {'Marcel':>6}  "
+              f"{'Stan':>6}  {'err_M':>6}  {'err_S':>6}")
+        print("  " + "-" * 56)
+        for _, row in td.iterrows():
+            print(f"  {int(row['year']):>4}  {row['team']:<8}  "
+                  f"{int(row['actual_W']):>6}  {row['W_marcel']:>6.1f}  "
+                  f"{row['W_stan']:>6.1f}  {row['err_M']:>+6.1f}  "
+                  f"{row['err_S']:>+6.1f}")
+
+        # Per-year MAE summary
+        print(f"\n  {'Year':>4}  {'MAE_M':>6}  {'MAE_S':>6}  {'Δ':>6}")
+        for yr in sorted(td["year"].unique()):
+            sub = td[td["year"] == yr]
+            mae_m = sub["err_M"].abs().mean()
+            mae_s = sub["err_S"].abs().mean()
+            print(f"  {int(yr):>4}  {mae_m:>6.1f}  {mae_s:>6.1f}  "
+                  f"{mae_s - mae_m:>+6.1f}")
+
+        # Save CSV
+        csv_path = OUT_DIR / "team_detail_2018_2025.csv"
+        td.to_csv(csv_path, index=False, encoding="utf-8-sig")
+        print(f"\n  Saved -> {csv_path}")
 
     # ── Save results ──
     output = {
