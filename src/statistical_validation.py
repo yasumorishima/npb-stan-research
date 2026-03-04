@@ -565,7 +565,8 @@ def player_level_tests(h_df, p_df, label="All years"):
     }
 
 
-def team_level_mae(h_df, p_df, years=None, label="All years", skip_impute=False):
+def team_level_mae(h_df, p_df, years=None, label="All years", skip_impute=False,
+                   min_pa_team=0, min_ip_team=0):
     """Compute team-level Pythagorean MAE from player-level LOO-CV predictions.
 
     Step 12 fixes:
@@ -579,6 +580,11 @@ def team_level_mae(h_df, p_df, years=None, label="All years", skip_impute=False)
     Args:
         skip_impute: If True, skip league-avg imputation for missing players.
             Use to compare pure model predictions without dilution.
+        min_pa_team: Minimum actual PA for a hitter to be included in team
+            aggregation. Players below this threshold are excluded from model
+            predictions and their PA is redirected to league-avg imputation.
+        min_ip_team: Minimum actual IP for a pitcher to be included in team
+            aggregation. Same logic as min_pa_team.
     """
     actual = pd.read_csv(
         "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
@@ -615,6 +621,12 @@ def team_level_mae(h_df, p_df, years=None, label="All years", skip_impute=False)
         p_df = pd.concat([p_df, p_fgn], ignore_index=True)
 
     h_df, p_df = _reassign_teams(h_df, p_df, saber, pitchers_raw)
+
+    # Step 15: Filter low-PA/IP players (redirect to imputation pool)
+    if min_pa_team > 0:
+        h_df = h_df[h_df["actual_PA"] >= min_pa_team].copy()
+    if min_ip_team > 0:
+        p_df = p_df[p_df["actual_IP"] >= min_ip_team].copy()
 
     # Step 12-2: Compute league averages and imputation
     lg_woba, lg_era = _compute_league_averages(saber, pitchers_raw)
@@ -1169,6 +1181,31 @@ def main():
     print(f"  {'Bootstrap P(Stan<)':20s}  {team_all['bootstrap_p_stan_better']:>12.4f}  "
           f"{team_no_imp['bootstrap_p_stan_better']:>12.4f}")
 
+    # 1e. Team-level MAE sweep: min_pa_team = [0, 50, 100]
+    print("\n[1e] Team-level MAE — min_pa_team sweep")
+    min_pa_sweep = {}
+    for mpt in [0, 50, 100]:
+        imp_summary, _ = team_level_mae(h_df, p_df, min_pa_team=mpt,
+                                        label=f"min_pa_team={mpt} (impute)")
+        noimp_summary, _ = team_level_mae(h_df, p_df, min_pa_team=mpt,
+                                          skip_impute=True,
+                                          label=f"min_pa_team={mpt} (no-impute)")
+        min_pa_sweep[f"mpt_{mpt}"] = {
+            "impute": imp_summary,
+            "no_impute": noimp_summary,
+        }
+    # Summary table
+    print(f"\n  ── min_pa_team sweep summary ──")
+    print(f"  {'mpt':>5}  {'MAE_M(imp)':>10}  {'MAE_S(imp)':>10}  {'Δ(imp)':>8}  "
+          f"{'MAE_M(no)':>10}  {'MAE_S(no)':>10}  {'Δ(no)':>8}")
+    for mpt in [0, 50, 100]:
+        imp = min_pa_sweep[f"mpt_{mpt}"]["impute"]
+        noi = min_pa_sweep[f"mpt_{mpt}"]["no_impute"]
+        print(f"  {mpt:>5}  {imp['mae_marcel']:>10.3f}  {imp['mae_stan']:>10.3f}  "
+              f"{imp['delta_mae']:>+8.3f}  "
+              f"{noi['mae_marcel']:>10.3f}  {noi['mae_stan']:>10.3f}  "
+              f"{noi['delta_mae']:>+8.3f}")
+
     # ── 2. 2021 (COVID) exclusion ──
     print("\n[2] 2021 exclusion — 7-year results")
     h_no21 = h_df[h_df["year"] != 2021]
@@ -1290,7 +1327,7 @@ def main():
 
     # ── Save results ──
     output = {
-        "step": "14_coverage_improvement",
+        "step": "15_team_aggregation_improvement",
         "japanese_loocv": {
             "years": JPN_YEARS,
             "n_hitters": len(h_df),
@@ -1319,6 +1356,7 @@ def main():
         },
         "foreign_loocv": foreign,
         "recency_weighting": recency_results,
+        "team_min_pa_sweep": min_pa_sweep,
         "ridge_alphas": {
             "jpn_hitter": round(ALPHA_JPN_H, 3),
             "jpn_pitcher": round(ALPHA_JPN_P, 3),
