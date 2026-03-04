@@ -118,6 +118,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "CI: ${{ inputs.step }} — update data"
+            git pull --rebase
             git push
           fi
 
