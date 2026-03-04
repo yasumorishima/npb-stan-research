@@ -182,6 +182,159 @@ def _impute_missing_players(h_df, p_df, saber, pitchers_raw, lg_woba, lg_era):
     return result
 
 
+def _foreign_loocv_for_teams(saber, pitchers_raw):
+    """Foreign player Ridge LOO-CV with team/PA/IP for team aggregation.
+
+    Same Ridge LOO-CV methodology as run_foreign_loocv() but enriched
+    with team and PA/IP data for integration into team_level_mae().
+
+    Returns (h_fgn, p_fgn) DataFrames with columns:
+        year, player, team, actual, marcel, stan, actual_PA (or actual_IP)
+    """
+    hitter_pairs, pitcher_pairs = [], []
+    with open(FOREIGN_DIR / "player_conversion_details.csv", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            yr = int(row["npb_first_year"])
+            npb_name = row["npb_name"]
+            if (row.get("prev_wOBA") and row.get("npb_first_wOBA")
+                    and row.get("wOBA_ratio")):
+                try:
+                    d = {
+                        "year": yr, "player": npb_name,
+                        "prev_wOBA": float(row["prev_wOBA"]),
+                        "actual": float(row["npb_first_wOBA"]),
+                    }
+                    for col in ["prev_K_pct", "prev_BB_pct"]:
+                        try:
+                            d[col] = float(row[col])
+                        except (ValueError, KeyError, TypeError):
+                            d[col] = None
+                    hitter_pairs.append(d)
+                except (ValueError, KeyError):
+                    pass
+            if (row.get("prev_ERA") and row.get("npb_first_ERA")
+                    and row.get("ERA_ratio")):
+                try:
+                    d = {
+                        "year": yr, "player": npb_name,
+                        "prev_ERA": float(row["prev_ERA"]),
+                        "actual": float(row["npb_first_ERA"]),
+                    }
+                    for col in ["prev_FIP", "prev_K_pct", "prev_BB_pct"]:
+                        try:
+                            d[col] = float(row[col])
+                        except (ValueError, KeyError, TypeError):
+                            d[col] = None
+                    pitcher_pairs.append(d)
+                except (ValueError, KeyError):
+                    pass
+
+    h_raw = pd.DataFrame(hitter_pairs)
+    p_raw = pd.DataFrame(pitcher_pairs)
+
+    if len(h_raw) == 0 and len(p_raw) == 0:
+        return pd.DataFrame(), pd.DataFrame()
+
+    # League averages (match run_foreign_loocv thresholds)
+    lg_woba = {}
+    for yr, grp in saber[saber["PA"] >= 100].groupby("year"):
+        lg_woba[yr] = float(grp["wOBA"].mean())
+    lg_era = {}
+    for yr, grp in pitchers_raw.groupby("year"):
+        sub = grp[(grp["IP_dec"] >= 30) & grp["ERA_num"].notna()]
+        if len(sub) > 0:
+            lg_era[yr] = float(sub["ERA_num"].mean())
+
+    # Hitter LOO-CV
+    h_results = []
+    if len(h_raw) > 0:
+        h_raw["lg_avg"] = h_raw["year"].map(lg_woba)
+        h_raw = h_raw.dropna(subset=["lg_avg"])
+        for hold_yr in sorted(h_raw["year"].unique()):
+            train = h_raw[h_raw["year"] != hold_yr].copy()
+            test = h_raw[h_raw["year"] == hold_yr].copy()
+            if len(test) == 0 or len(train) < 5:
+                continue
+            for col in ["prev_K_pct", "prev_BB_pct"]:
+                tmean = train[col].mean()
+                train[col] = train[col].fillna(tmean)
+                test[col] = test[col].fillna(tmean)
+            feat_cols = ["prev_wOBA", "prev_K_pct", "prev_BB_pct"]
+            means = train[feat_cols].mean()
+            stds = train[feat_cols].std().replace(0, 1)
+            X_train = ((train[feat_cols] - means) / stds).values
+            X_test = ((test[feat_cols] - means) / stds).values
+            y_train = (train["actual"] - train["lg_avg"]).values
+            delta, _ = ridge_fit_predict(X_train, y_train, X_test, ALPHA_FGN_H)
+            stan_pred = test["lg_avg"].values + delta
+            for i, (_, row) in enumerate(test.iterrows()):
+                h_results.append({
+                    "year": int(hold_yr), "player": row["player"],
+                    "actual": row["actual"],
+                    "marcel": row["lg_avg"],
+                    "stan": float(stan_pred[i]),
+                })
+
+    # Pitcher LOO-CV
+    p_results = []
+    if len(p_raw) > 0:
+        p_raw["lg_avg"] = p_raw["year"].map(lg_era)
+        p_raw = p_raw.dropna(subset=["lg_avg"])
+        for hold_yr in sorted(p_raw["year"].unique()):
+            train = p_raw[p_raw["year"] != hold_yr].copy()
+            test = p_raw[p_raw["year"] == hold_yr].copy()
+            if len(test) == 0 or len(train) < 5:
+                continue
+            for col in ["prev_FIP", "prev_K_pct", "prev_BB_pct"]:
+                tmean = train[col].mean()
+                train[col] = train[col].fillna(tmean)
+                test[col] = test[col].fillna(tmean)
+            feat_cols = ["prev_ERA", "prev_FIP", "prev_K_pct", "prev_BB_pct"]
+            means = train[feat_cols].mean()
+            stds = train[feat_cols].std().replace(0, 1)
+            X_train = ((train[feat_cols] - means) / stds).values
+            X_test = ((test[feat_cols] - means) / stds).values
+            y_train = (train["actual"] - train["lg_avg"]).values
+            delta, _ = ridge_fit_predict(X_train, y_train, X_test, ALPHA_FGN_P)
+            stan_pred = test["lg_avg"].values + delta
+            for i, (_, row) in enumerate(test.iterrows()):
+                p_results.append({
+                    "year": int(hold_yr), "player": row["player"],
+                    "actual": row["actual"],
+                    "marcel": row["lg_avg"],
+                    "stan": float(stan_pred[i]),
+                })
+
+    h_fgn = (pd.DataFrame(h_results) if h_results
+             else pd.DataFrame(columns=["year", "player", "actual", "marcel", "stan"]))
+    p_fgn = (pd.DataFrame(p_results) if p_results
+             else pd.DataFrame(columns=["year", "player", "actual", "marcel", "stan"]))
+
+    # Enrich with team/PA/IP from raw NPB data
+    if len(h_fgn) > 0:
+        raw_h_lookup = (
+            saber[["player", "year", "team", "PA"]]
+            .sort_values("PA", ascending=False)
+            .drop_duplicates(subset=["player", "year"], keep="first")
+        )
+        h_fgn = h_fgn.merge(raw_h_lookup, on=["player", "year"], how="left")
+        h_fgn = h_fgn.rename(columns={"PA": "actual_PA"})
+        h_fgn = h_fgn.dropna(subset=["team", "actual_PA"])
+
+    if len(p_fgn) > 0:
+        raw_p_lookup = (
+            pitchers_raw[["player", "year", "team", "IP_dec"]]
+            .sort_values("IP_dec", ascending=False)
+            .drop_duplicates(subset=["player", "year"], keep="first")
+            .rename(columns={"IP_dec": "actual_IP"})
+        )
+        p_fgn = p_fgn.merge(raw_p_lookup, on=["player", "year"], how="left")
+        p_fgn = p_fgn.dropna(subset=["team", "actual_IP"])
+
+    print(f"  Foreign LOO-CV for teams: {len(h_fgn)} hitters, {len(p_fgn)} pitchers")
+    return h_fgn, p_fgn
+
+
 def ridge_fit_predict(X_train, y_train, X_test, alpha):
     """Ridge regression: beta = (X'X + alpha*I)^{-1} X'y."""
     n_feat = X_train.shape[1]
@@ -419,6 +572,9 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
       1. FA reassignment — use actual year-t team from raw data
       2. Missing player imputation — fill uncovered PA/IP with league avg
       3. Coverage display — show PA_cov/IP_cov per team-year
+    Step 12b:
+      4. Foreign player integration — Ridge LOO-CV predictions for first-year
+         foreign players merged into team RS/RA (improves coverage)
     """
     actual = pd.read_csv(
         "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
@@ -433,6 +589,26 @@ def team_level_mae(h_df, p_df, years=None, label="All years"):
 
     # Step 12-1: Reassign teams using actual year-t data
     saber, pitchers_raw = _load_raw_data()
+
+    # Step 12b: Integrate foreign player LOO-CV predictions
+    h_fgn, p_fgn = _foreign_loocv_for_teams(saber, pitchers_raw)
+    if years is not None:
+        if len(h_fgn) > 0:
+            h_fgn = h_fgn[h_fgn["year"].isin(years)]
+        if len(p_fgn) > 0:
+            p_fgn = p_fgn[p_fgn["year"].isin(years)]
+    # Remove duplicates (prefer foreign model for first-year foreign players)
+    if len(h_fgn) > 0:
+        fgn_h_keys = set(zip(h_fgn["player"], h_fgn["year"]))
+        h_df = h_df[~h_df.apply(
+            lambda r: (r["player"], r["year"]) in fgn_h_keys, axis=1)]
+        h_df = pd.concat([h_df, h_fgn], ignore_index=True)
+    if len(p_fgn) > 0:
+        fgn_p_keys = set(zip(p_fgn["player"], p_fgn["year"]))
+        p_df = p_df[~p_df.apply(
+            lambda r: (r["player"], r["year"]) in fgn_p_keys, axis=1)]
+        p_df = pd.concat([p_df, p_fgn], ignore_index=True)
+
     h_df, p_df = _reassign_teams(h_df, p_df, saber, pitchers_raw)
 
     # Step 12-2: Compute league averages and imputation
