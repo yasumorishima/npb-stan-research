@@ -162,11 +162,15 @@ def league_avg_fip(pitchers_df: pd.DataFrame, year: int) -> float:
 
 
 def compute_marcel_fip(pitchers_df: pd.DataFrame, target_year: int) -> pd.DataFrame:
-    """Marcel FIP projection for all pitchers with sufficient history."""
+    """Marcel FIP projection for all pitchers with sufficient history.
+
+    Also computes ip_stability (same as compute_marcel_era).
+    """
     lg_avg = league_avg_fip(pitchers_df, target_year)
     rows = []
     for player, grp in pitchers_df.groupby("player"):
         w_total = fip_sum = 0.0
+        ip_vals: list[float] = []
         for lag, w in MARCEL_WEIGHTS.items():
             yr = target_year - lag
             row = grp[grp["year"] == yr]
@@ -179,6 +183,7 @@ def compute_marcel_fip(pitchers_df: pd.DataFrame, target_year: int) -> pd.DataFr
             fip = float(fip)
             w_total += w * ip
             fip_sum += w * ip * fip
+            ip_vals.append(ip)
         if w_total == 0:
             continue
         recent = grp[grp["year"] == target_year - 1]
@@ -187,8 +192,10 @@ def compute_marcel_fip(pitchers_df: pd.DataFrame, target_year: int) -> pd.DataFr
         team = recent.iloc[0]["team"]
         fip_raw = fip_sum / w_total
         fip_proj = (fip_raw * w_total + lg_avg * REGRESS_IP_PITCH) / (w_total + REGRESS_IP_PITCH)
+        ip_stability = min(ip_vals) / max(ip_vals) if len(ip_vals) >= 2 else 0.5
         rows.append({"player": player, "team": team, "year": target_year,
-                     "marcel_fip": round(fip_proj, 4), "lg_avg_fip": round(lg_avg, 4)})
+                     "marcel_fip": round(fip_proj, 4), "lg_avg_fip": round(lg_avg, 4),
+                     "ip_stability": round(ip_stability, 4)})
     return pd.DataFrame(rows)
 
 
