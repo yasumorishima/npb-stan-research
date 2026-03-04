@@ -51,37 +51,13 @@
       }
     },
     "team_level_all": {
-      "mae_marcel": 6.535,
-      "mae_stan": 6.591,
-      "delta_mae": 0.056,
-      "paired_t_p": 0.441841,
-      "bootstrap_p_stan_better": 0.2185,
-      "n_team_years": 105,
+      "mae_marcel": 6.449,
+      "mae_stan": 6.514,
+      "delta_mae": 0.066,
+      "paired_t_p": 0.395696,
+      "bootstrap_p_stan_better": 0.1971,
+      "n_team_years": 96,
       "yearly": {
-        "2015": {
-          "marcel": 6.818,
-          "stan": 6.745,
-          "delta": -0.073,
-          "n": 4,
-          "avg_PA_cov": 12.9,
-          "avg_IP_cov": 11.5
-        },
-        "2016": {
-          "marcel": 10.167,
-          "stan": 10.041,
-          "delta": -0.126,
-          "n": 3,
-          "avg_PA_cov": 4.9,
-          "avg_IP_cov": 9.5
-        },
-        "2017": {
-          "marcel": 4.652,
-          "stan": 4.785,
-          "delta": 0.133,
-          "n": 2,
-          "avg_PA_cov": 12.3,
-          "avg_IP_cov": 4.3
-        },
         "2018": {
           "marcel": 6.535,
           "stan": 6.741,
