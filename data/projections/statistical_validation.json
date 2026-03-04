@@ -207,6 +207,50 @@
       "stan_win_rate": "586/1154 (50.8%)"
     }
   },
+  "pitcher_era_k9": {
+    "n": 1154,
+    "features": [
+      "K_pct",
+      "BB_pct",
+      "K_per_9",
+      "BB_per_9",
+      "age_from_peak"
+    ],
+    "player_level": {
+      "n": 1154,
+      "mae_marcel": 0.95098,
+      "mae_stan": 0.9348,
+      "delta_mae": 0.01618,
+      "paired_t_stat": 2.5163,
+      "paired_t_p": 0.011995,
+      "wilcoxon_p": 0.031136,
+      "bootstrap_p_stan_better": 0.9929,
+      "cohens_d": 0.0741,
+      "stan_win_rate": "604/1154 (52.3%)"
+    }
+  },
+  "pitcher_fip_k9": {
+    "n": 1154,
+    "features": [
+      "K_pct",
+      "BB_pct",
+      "K_per_9",
+      "BB_per_9",
+      "age_from_peak"
+    ],
+    "player_level": {
+      "n": 1154,
+      "mae_marcel": 0.64501,
+      "mae_stan": 0.64223,
+      "delta_mae": 0.00278,
+      "paired_t_stat": 0.9809,
+      "paired_t_p": 0.326846,
+      "wilcoxon_p": 0.413914,
+      "bootstrap_p_stan_better": 0.8373,
+      "cohens_d": 0.0289,
+      "stan_win_rate": "600/1154 (52.0%)"
+    }
+  },
   "foreign_loocv": {
     "hitter": {
       "n": 78,
