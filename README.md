@@ -94,7 +94,10 @@ Monte Carlo simulation (N=10,000) propagates player uncertainty to team win dist
 
 ## Blog Articles
 
-- [I Added Park Factor Correction to My NPB Bayesian Model — Backtest & 2026 Forecast (DEV.to)](https://dev.to/yasumorishima/i-added-park-factor-correction-to-my-npb-bayesian-prediction-model-backtest-validation-2026-forecast)
+- [Did Bayesian Projection (Stan/Ridge) Predict the 2021 NPB Last-to-First Upsets? (DEV.to)](https://dev.to/yasumorishima/did-bayesian-projection-stanridge-predict-the-2021-npb-last-to-first-upsets-4595)
+- [ベイズ予測（Stan/Ridge）で2021年ヤクルト・オリックスの優勝は見えたか（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-lastplace-to-champion)
+- [Beyond Marcel: Adding Bayesian Regression to NPB Baseball Predictions (DEV.to)](https://dev.to/yasumorishima/beyond-marcel-adding-bayesian-regression-to-npb-baseball-predictions-a-15-step-journey-1b4f)
+- [Marcel法の限界を超えたい — NPBベイズ回帰15ステップの記録（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-projection-story)
 - [NPBベイズ順位予測にパークファクター補正を追加した（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-park-factors)
 
 ## Data Sources
