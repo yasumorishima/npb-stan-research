@@ -326,10 +326,17 @@ def _run_one_backtest(
         median_w = float(np.median(wins_sim))
         ci_lo    = float(np.percentile(wins_sim, 10))
         ci_hi    = float(np.percentile(wins_sim, 90))
+        pf_used = None
+        if pf_map is not None:
+            pf_val = pf_map.get((int(row["year"]), str(row["team"])))
+            if pf_val and pf_val > 0:
+                pf_used = round(pf_val, 3)
+
         rows.append({
             "year":        int(row["year"]),
             "league":      str(row.get("league", "")),
             "team":        row["team"],
+            "pf_5yr":      pf_used,
             "pred_RS":     round(pred_rs, 1),
             "pred_RA":     round(pred_ra, 1),
             "actual_W":    actual_w,
@@ -410,29 +417,48 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
             f"  {grp_p['covered'].mean():10.1%}"
         )
 
-    # ── Save results (PF version is canonical) ───────────────────────────────
-    rows_pf = df_pf.to_dict("records")
-    summary = {
-        "mae_no_pf":      round(mae_b, 3),
-        "mae_with_pf":    round(mae_p, 3),
-        "bias_no_pf":     round(bias_b, 3),
-        "bias_with_pf":   round(bias_p, 3),
-        "coverage_no_pf": round(cov_b, 4),
-        "coverage_with_pf": round(cov_p, 4),
-        "n":              len(df_pf),
-        "years":          sorted(df_pf["year"].unique().tolist()),
-        "sigma_rs":       SIGMA_RS_HIST,
-        "sigma_ra":       SIGMA_RA_HIST,
-        "detail":         rows_pf,
-    }
-    json_path = OUT_DIR / "backtest_results.json"
-    json_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\nSaved -> {json_path}")
-
+    # ── Save results ─────────────────────────────────────────────────────────
+    # backtest_results.csv: PF補正後の予測（canonical）
     df_pf.sort_values(["year", "league", "team"]).to_csv(
         OUT_DIR / "backtest_results.csv", index=False, encoding="utf-8-sig"
     )
-    print(f"Saved -> {OUT_DIR / 'backtest_results.csv'}")
+    print(f"\nSaved -> {OUT_DIR / 'backtest_results.csv'}")
+
+    # backtest_results_comparison.csv: No PF vs With PF を横並び比較
+    df_cmp = df_pf[["year", "league", "team", "pf_5yr", "actual_W", "actual_RS", "actual_RA"]].copy()
+    df_cmp["pred_RS_base"]    = df_base["pred_RS"].values
+    df_cmp["pred_RA_base"]    = df_base["pred_RA"].values
+    df_cmp["median_wins_base"] = df_base["median_wins"].values
+    df_cmp["error_base"]      = df_base["error"].values
+    df_cmp["covered_base"]    = df_base["covered"].values
+    df_cmp["pred_RS_pf"]      = df_pf["pred_RS"].values
+    df_cmp["pred_RA_pf"]      = df_pf["pred_RA"].values
+    df_cmp["median_wins_pf"]  = df_pf["median_wins"].values
+    df_cmp["error_pf"]        = df_pf["error"].values
+    df_cmp["covered_pf"]      = df_pf["covered"].values
+    df_cmp["wins_delta"]      = (df_pf["median_wins"] - df_base["median_wins"]).round(1).values
+    df_cmp.sort_values(["year", "league", "team"]).to_csv(
+        OUT_DIR / "backtest_comparison.csv", index=False, encoding="utf-8-sig"
+    )
+    print(f"Saved -> {OUT_DIR / 'backtest_comparison.csv'}")
+
+    rows_pf = df_pf.to_dict("records")
+    summary = {
+        "mae_no_pf":        round(mae_b, 3),
+        "mae_with_pf":      round(mae_p, 3),
+        "bias_no_pf":       round(bias_b, 3),
+        "bias_with_pf":     round(bias_p, 3),
+        "coverage_no_pf":   round(cov_b, 4),
+        "coverage_with_pf": round(cov_p, 4),
+        "n":                len(df_pf),
+        "years":            sorted(df_pf["year"].unique().tolist()),
+        "sigma_rs":         SIGMA_RS_HIST,
+        "sigma_ra":         SIGMA_RA_HIST,
+        "detail":           rows_pf,
+    }
+    json_path = OUT_DIR / "backtest_results.json"
+    json_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Saved -> {json_path}")
 
 
 def main(n_sim: int = N_SIM) -> None:
