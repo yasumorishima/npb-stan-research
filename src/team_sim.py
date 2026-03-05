@@ -108,7 +108,7 @@ def compute_turnover(
     """
     saber_2025 = pd.read_csv(
         "https://raw.githubusercontent.com/yasumorishima/npb-prediction/main"
-        "/data/raw/npb_sabermetrics_2015_2025.csv",
+        "/data/raw/npb_hitters_2015_2025.csv",
         encoding="utf-8-sig",
     )
     saber_2025 = saber_2025[saber_2025["year"] == 2025]
