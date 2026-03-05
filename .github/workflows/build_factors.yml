@@ -23,6 +23,7 @@ on:
           - diagnose_big_misses
           - coverage_gap
           - generate_2026_stan
+          - analyze_pf
 
 permissions:
   contents: write
@@ -114,6 +115,10 @@ jobs:
       - name: Generate 2026 Stan-adjusted projections (Ridge)
         if: inputs.step == 'generate_2026_stan'
         run: python src/generate_2026_stan.py
+
+      - name: Analyze PF correction comparison (blog data)
+        if: inputs.step == 'analyze_pf'
+        run: python src/analyze_pf_comparison.py
 
       - name: Commit results to repo
         run: |
