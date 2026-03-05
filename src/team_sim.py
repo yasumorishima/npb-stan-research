@@ -72,6 +72,17 @@ def load_marcel() -> tuple[pd.DataFrame, pd.DataFrame]:
     return hitters, pitchers
 
 
+def load_park_factors() -> dict[str, float]:
+    """Load PF_5yr (latest year) per team from npb-prediction.
+
+    Returns dict: team_ja -> PF_5yr (e.g. {"中日": 0.844, "日本ハム": 1.147, ...})
+    """
+    pf_df = pd.read_csv(f"{NPBP_BASE}/npb_park_factors.csv", encoding="utf-8-sig")
+    latest_year = pf_df["year"].max()
+    latest = pf_df[pf_df["year"] == latest_year][["team", "PF_5yr"]].copy()
+    return dict(zip(latest["team"], latest["PF_5yr"]))
+
+
 def load_historical() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load Marcel team-level historical projections and actual results."""
     hist = pd.read_csv(f"{NPBP_BASE}/marcel_team_historical.csv", encoding="utf-8-sig")
@@ -170,6 +181,7 @@ def simulate(
     n_sim: int = N_SIM,
     seed: int = 42,
     turnover: dict[str, float] | None = None,
+    park_factors: dict[str, float] | None = None,
 ) -> dict[str, np.ndarray]:
     """Run Monte Carlo simulation. Returns dict: team -> (n_sim,) win totals.
 
@@ -177,6 +189,10 @@ def simulate(
         turnover: Optional dict of team -> turnover_pct (0–1).  When provided,
             each team's RS/RA noise sigma is scaled by (1 + TURNOVER_K * pct)
             to widen the confidence interval for teams with high roster churn.
+        park_factors: Optional dict of team -> PF_5yr.  When provided, raw
+            RS/RA computed from Marcel stats are divided by (PF + 1) / 2 to
+            remove the park effect embedded in player stats, yielding
+            talent-neutral run estimates before re-calibration.
     """
     rng = np.random.default_rng(seed)
 
@@ -205,6 +221,21 @@ def simulate(
             continue
         rs_raw[team] = K_HIT * (ops_sim[h_mask] * pa[h_mask]).sum(axis=0)
         ra_raw[team] = (era_sim[p_mask] * ip[p_mask]).sum(axis=0) / 9.0
+
+    # Park factor correction: remove park effect embedded in Marcel stats.
+    # Player stats are accumulated partly at their home park (PF effect).
+    # Dividing by (PF + 1) / 2 neutralizes this bias.
+    # E.g., Vantelin (PF=0.844): Dragons hitters' OPS is deflated by the
+    # pitcher-friendly park → RS_raw too low. Dividing by 0.922 inflates to
+    # neutral, correctly revealing the hitters' true run-scoring ability.
+    if park_factors:
+        for team in list(rs_raw.keys()):
+            pf = park_factors.get(team)
+            if pf is None or pf <= 0:
+                continue
+            pf_factor = (pf + 1.0) / 2.0
+            rs_raw[team] = rs_raw[team] / pf_factor
+            ra_raw[team] = ra_raw[team] / pf_factor
 
     # Post-hoc calibration: scale league-avg RS and RA to NPB_HIST_RS
     # This corrects Marcel's systematic optimism (OPS high / ERA low)
@@ -373,8 +404,17 @@ def main(n_sim: int = N_SIM) -> None:
     hitters  = normalize_hitter_pa(hitters)
     pitchers = normalize_pitcher_ip(pitchers)
 
+    print("Loading park factors (2025 PF_5yr)...")
+    try:
+        park_factors = load_park_factors()
+        for team, pf in sorted(park_factors.items(), key=lambda x: -x[1]):
+            print(f"  {team:12s}  PF_5yr={pf:.3f}")
+    except Exception as e:
+        print(f"  WARNING: Could not load park factors ({e}). Running without PF correction.")
+        park_factors = None
+
     print(f"Running {n_sim:,} simulations...")
-    wins_sim = simulate(hitters, pitchers, n_sim, turnover=turnover)
+    wins_sim = simulate(hitters, pitchers, n_sim, turnover=turnover, park_factors=park_factors)
 
     results = compute_probabilities(wins_sim)
 
@@ -410,6 +450,7 @@ def main(n_sim: int = N_SIM) -> None:
             "median_wins":  round(v["median_wins"], 1),
             "wins_80ci_lo": round(lo, 1),
             "wins_80ci_hi": round(hi, 1),
+            "pf_5yr":       round(park_factors.get(team, float("nan")), 3) if park_factors else float("nan"),
         })
     (
         pd.DataFrame(rows)

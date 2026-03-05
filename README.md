@@ -88,6 +88,11 @@ Monte Carlo simulation (N=10,000) propagates player uncertainty to team win dist
 
 ---
 
+## Blog Articles
+
+- [Did Bayesian Projection (Stan/Ridge) Predict the 2021 NPB Last-to-First Upsets? (DEV.to)](https://dev.to/yasumorishima/did-bayesian-projection-stanridge-predict-the-2021-npb-last-to-first-upsets-4595)
+- [ベイズ予測（Stan/Ridge）で2021年ヤクルト・オリックスの優勝は見えたか（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-lastplace-to-champion)
+
 ## Data Sources
 
 - **NPB stats**: [baseball-data.com](https://baseball-data.com/) + [npb.jp](https://npb.jp/)
