@@ -99,6 +99,7 @@ jobs:
         run: python src/team_compare.py
 
       - name: Run statistical validation (LOO-CV + significance tests)
+        # Also saves jpn_hitter_loocv_predictions.csv / jpn_pitcher_loocv_predictions.csv (all years 2018-2025)
         if: inputs.step == 'statistical_validation'
         run: python src/statistical_validation.py
 

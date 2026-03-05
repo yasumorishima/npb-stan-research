@@ -1109,6 +1109,16 @@ def main():
           f", {len(p_k9_df)} pitcher-ERA+K/9-years"
           f", {len(p_fip_k9_df)} pitcher-FIP+K/9-years")
 
+    # Save player-level LOO-CV predictions for all years (2018-2025)
+    loocv_h_path = MODEL_DIR / "jpn_hitter_loocv_predictions.csv"
+    loocv_p_path = MODEL_DIR / "jpn_pitcher_loocv_predictions.csv"
+    h_df.rename(columns={"actual": "actual_woba", "marcel": "marcel_woba", "stan": "stan_woba"}).to_csv(
+        loocv_h_path, index=False, encoding="utf-8-sig")
+    p_df.rename(columns={"actual": "actual_era", "marcel": "marcel_era", "stan": "stan_era"}).to_csv(
+        loocv_p_path, index=False, encoding="utf-8-sig")
+    print(f"  Saved -> {loocv_h_path}")
+    print(f"  Saved -> {loocv_p_path}")
+
     # 1a. Player-level significance tests
     print("\n[1a] Player-level significance tests — ALL years")
     player_all = player_level_tests(h_df, p_df, "All 8 years (λ=1.0)")
