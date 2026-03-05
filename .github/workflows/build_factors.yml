@@ -24,6 +24,7 @@ on:
           - coverage_gap
           - generate_2026_stan
           - analyze_pf
+          - compare_pf_methods
 
 permissions:
   contents: write
@@ -119,6 +120,10 @@ jobs:
       - name: Analyze PF correction comparison (blog data)
         if: inputs.step == 'analyze_pf'
         run: python src/analyze_pf_comparison.py
+
+      - name: Compare No PF vs 単年PF vs PF_5yr (3-way backtest)
+        if: inputs.step == 'compare_pf_methods'
+        run: python src/compare_pf_methods.py
 
       - name: Commit results to repo
         run: |
