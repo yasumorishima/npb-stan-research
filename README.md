@@ -31,13 +31,17 @@ Stan beats Marcel in 3 of 4 backtest years (2022, 2023, 2024).
 - **Japanese hitters**: K%/BB% don't add beyond Marcel wOBA (wOBA already incorporates these). BABIP (luck component) does add signal (`delta_BABIP = -0.006`): high BABIP in t-1 → Marcel overestimates year t.
 - **Foreign first-year players**: K%/BB% from previous league add significant signal for both hitters and pitchers.
 
-### Team Backtest (Marcel baseline, 2018-2025)
+### Team Backtest (Marcel baseline + PF correction, 2018-2025)
 
-| Metric | Value |
-|---|---|
-| MAE | **6.41 wins** |
-| Bias | +2.69 wins (slight overestimation) |
-| 80% CI coverage | **86.5%** (target: 80%) |
+Park factor (PF_5yr) correction is applied before Pythagorean win% calculation to remove stadium bias embedded in Marcel projections.
+
+| Metric | No PF | With PF | Δ |
+|---|---|---|---|
+| MAE | 6.41 wins | **6.41 wins** | ±0.00 |
+| Bias | +2.69 wins | +2.70 wins | +0.01 |
+| 80% CI coverage | 86.5% | **87.5%** | **+1.0%** |
+
+PF correction is incorporated into the pipeline. MAE is unchanged; CI coverage improves marginally (+1.0%). Effect expected to grow as Vantelin Dome and Rakuten Mobile Park undergo fan-friendly renovations in 2026.
 
 ---
 
@@ -90,8 +94,8 @@ Monte Carlo simulation (N=10,000) propagates player uncertainty to team win dist
 
 ## Blog Articles
 
-- [Did Bayesian Projection (Stan/Ridge) Predict the 2021 NPB Last-to-First Upsets? (DEV.to)](https://dev.to/yasumorishima/did-bayesian-projection-stanridge-predict-the-2021-npb-last-to-first-upsets-4595)
-- [ベイズ予測（Stan/Ridge）で2021年ヤクルト・オリックスの優勝は見えたか（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-lastplace-to-champion)
+- [I Added Park Factor Correction to My NPB Bayesian Model — Backtest & 2026 Forecast (DEV.to)](https://dev.to/yasumorishima/i-added-park-factor-correction-to-my-npb-bayesian-prediction-model-backtest-validation-2026-forecast)
+- [NPBベイズ順位予測にパークファクター補正を追加した（Zenn）](https://zenn.dev/shogaku/articles/npb-bayes-park-factors)
 
 ## Data Sources
 
