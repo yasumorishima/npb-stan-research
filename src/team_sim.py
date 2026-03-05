@@ -294,30 +294,26 @@ def compute_probabilities(wins_sim: dict[str, np.ndarray]) -> dict[str, dict]:
     return results
 
 
-def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
-    """Validate team-level simulation against 2018-2025 Marcel team projections."""
-    print("Loading historical Marcel team projections...")
-    hist, actual = load_historical()
-
-    # Merge on year + team (inner join; marcel_team_historical covers 2018-2025)
-    merged = hist.merge(
-        actual[["year", "team", "league", "G", "W", "RS", "RA"]],
-        on=["year", "team"],
-        how="inner",
-        suffixes=("_h", ""),
-    )
-    # resolve league column (hist may also have league)
-    if "league_h" in merged.columns:
-        merged = merged.rename(columns={"league": "league", "league_h": "league_hist"})
-        merged["league"] = merged["league"].fillna(merged["league_hist"])
-    print(f"  Matched: {len(merged)} team-years ({merged['year'].nunique()} seasons)")
-
-    rng = np.random.default_rng(seed)
-
+def _run_one_backtest(
+    merged: pd.DataFrame,
+    rng: np.random.Generator,
+    n_sim: int,
+    pf_map: dict[tuple[int, str], float] | None,
+) -> pd.DataFrame:
+    """Inner loop: run simulation for each team-year, optionally with PF correction."""
     rows = []
     for _, row in merged.iterrows():
         pred_rs = float(row["pred_RS"])
         pred_ra = float(row["pred_RA"])
+
+        # Park factor correction: remove park effect embedded in Marcel team stats.
+        if pf_map is not None:
+            pf = pf_map.get((int(row["year"]), str(row["team"])))
+            if pf and pf > 0:
+                pf_factor = (pf + 1.0) / 2.0
+                pred_rs = pred_rs / pf_factor
+                pred_ra = pred_ra / pf_factor
+
         g = int(row["G"])
         actual_w = float(row["W"])
 
@@ -328,9 +324,8 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
         wins_sim = rs_exp / (rs_exp + ra_exp) * g
 
         median_w = float(np.median(wins_sim))
-        ci_lo = float(np.percentile(wins_sim, 10))
-        ci_hi = float(np.percentile(wins_sim, 90))
-
+        ci_lo    = float(np.percentile(wins_sim, 10))
+        ci_hi    = float(np.percentile(wins_sim, 90))
         rows.append({
             "year":        int(row["year"]),
             "league":      str(row.get("league", "")),
@@ -346,45 +341,96 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
             "covered":     bool(ci_lo <= actual_w <= ci_hi),
             "error":       round(median_w - actual_w, 1),
         })
+    return pd.DataFrame(rows)
 
-    df = pd.DataFrame(rows)
-    mae      = float(df["error"].abs().mean())
-    bias     = float(df["error"].mean())
-    coverage = float(df["covered"].mean())
 
-    print(f"\n── Backtest Results (2018-2025, n={len(df)}) ──────────────────────")
-    print(f"  Point prediction MAE : {mae:.2f} wins")
-    print(f"  Prediction bias      : {bias:+.2f} wins")
-    print(f"  80% CI coverage      : {coverage:.1%}  (target ≈ 80%)")
+def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
+    """Validate team-level simulation against 2018-2025 Marcel team projections.
 
-    print(f"\n{'Year':>6}  {'MAE':>5}  {'Bias':>6}  {'Coverage':>8}  {'N':>3}")
-    for yr, grp in df.groupby("year"):
+    Runs twice (without / with park factor correction) and prints a comparison.
+    """
+    print("Loading historical Marcel team projections...")
+    hist, actual = load_historical()
+
+    # Merge on year + team
+    merged = hist.merge(
+        actual[["year", "team", "league", "G", "W", "RS", "RA"]],
+        on=["year", "team"],
+        how="inner",
+        suffixes=("_h", ""),
+    )
+    if "league_h" in merged.columns:
+        merged = merged.rename(columns={"league": "league", "league_h": "league_hist"})
+        merged["league"] = merged["league"].fillna(merged["league_hist"])
+    print(f"  Matched: {len(merged)} team-years ({merged['year'].nunique()} seasons)")
+
+    # Load park factors (all years)
+    print("Loading park factors...")
+    try:
+        pf_df = pd.read_csv(f"{NPBP_BASE}/npb_park_factors.csv", encoding="utf-8-sig")
+        pf_map: dict[tuple[int, str], float] = {
+            (int(r["year"]), str(r["team"])): float(r["PF_5yr"])
+            for _, r in pf_df.iterrows()
+        }
+        print(f"  Loaded PF data: {len(pf_map)} team-years")
+    except Exception as e:
+        print(f"  WARNING: Could not load park factors ({e})")
+        pf_map = {}
+
+    rng_base = np.random.default_rng(seed)
+    rng_pf   = np.random.default_rng(seed)  # same seed → comparable results
+
+    df_base = _run_one_backtest(merged, rng_base, n_sim, pf_map=None)
+    df_pf   = _run_one_backtest(merged, rng_pf,   n_sim, pf_map=pf_map if pf_map else None)
+
+    # ── Print comparison ──────────────────────────────────────────────────────
+    def _stats(df: pd.DataFrame) -> tuple[float, float, float]:
+        mae      = float(df["error"].abs().mean())
+        bias     = float(df["error"].mean())
+        coverage = float(df["covered"].mean())
+        return mae, bias, coverage
+
+    mae_b, bias_b, cov_b = _stats(df_base)
+    mae_p, bias_p, cov_p = _stats(df_pf)
+
+    print(f"\n{'':30s}  {'No PF':>8}  {'With PF':>8}  {'Δ':>8}")
+    print(f"  {'MAE (wins)':28s}  {mae_b:8.2f}  {mae_p:8.2f}  {mae_p - mae_b:+8.2f}")
+    print(f"  {'Bias (wins)':28s}  {bias_b:+8.2f}  {bias_p:+8.2f}  {bias_p - bias_b:+8.2f}")
+    print(f"  {'80% CI coverage':28s}  {cov_b:8.1%}  {cov_p:8.1%}  {cov_p - cov_b:+8.1%}")
+
+    print(f"\n── Year-by-year (With PF) ─────────────────────────────────────────")
+    print(f"{'Year':>6}  {'MAE(base)':>9}  {'MAE(PF)':>9}  {'Δ':>7}  {'Cover(PF)':>10}")
+    for yr, grp_p in df_pf.groupby("year"):
+        grp_b = df_base[df_base["year"] == yr]
         print(
-            f"  {yr}  {grp['error'].abs().mean():5.2f}"
-            f"  {grp['error'].mean():+6.2f}"
-            f"  {grp['covered'].mean():8.1%}"
-            f"  {len(grp):3d}"
+            f"  {yr}"
+            f"  {grp_b['error'].abs().mean():9.2f}"
+            f"  {grp_p['error'].abs().mean():9.2f}"
+            f"  {grp_p['error'].abs().mean() - grp_b['error'].abs().mean():+7.2f}"
+            f"  {grp_p['covered'].mean():10.1%}"
         )
 
-    # Save JSON
+    # ── Save results (PF version is canonical) ───────────────────────────────
+    rows_pf = df_pf.to_dict("records")
     summary = {
-        "mae":          round(mae, 3),
-        "bias":         round(bias, 3),
-        "coverage_80ci": round(coverage, 4),
-        "n":            len(df),
-        "years":        sorted(df["year"].unique().tolist()),
-        "sigma_rs":     SIGMA_RS_HIST,
-        "sigma_ra":     SIGMA_RA_HIST,
-        "detail":       rows,
+        "mae_no_pf":      round(mae_b, 3),
+        "mae_with_pf":    round(mae_p, 3),
+        "bias_no_pf":     round(bias_b, 3),
+        "bias_with_pf":   round(bias_p, 3),
+        "coverage_no_pf": round(cov_b, 4),
+        "coverage_with_pf": round(cov_p, 4),
+        "n":              len(df_pf),
+        "years":          sorted(df_pf["year"].unique().tolist()),
+        "sigma_rs":       SIGMA_RS_HIST,
+        "sigma_ra":       SIGMA_RA_HIST,
+        "detail":         rows_pf,
     }
     json_path = OUT_DIR / "backtest_results.json"
     json_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nSaved -> {json_path}")
 
-    # Save CSV
-    (
-        df.sort_values(["year", "league", "team"])
-        .to_csv(OUT_DIR / "backtest_results.csv", index=False, encoding="utf-8-sig")
+    df_pf.sort_values(["year", "league", "team"]).to_csv(
+        OUT_DIR / "backtest_results.csv", index=False, encoding="utf-8-sig"
     )
     print(f"Saved -> {OUT_DIR / 'backtest_results.csv'}")
 
