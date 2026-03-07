@@ -651,6 +651,7 @@ def loo_cv_hitters(data: list[dict], draws: int = 2000, warmup: int = 1000) -> d
 
     N = len(data)
     predictions = []
+    n_failed = 0
     print(f"LOO-CV: {N} hitters")
 
     for i in range(N):
@@ -669,7 +670,8 @@ def loo_cv_hitters(data: list[dict], draws: int = 2000, warmup: int = 1000) -> d
                 iter_warmup=warmup, seed=42, show_progress=False,
             )
         except Exception as e:
-            print(f"  LOO {i}/{N} FAILED: {e}")
+            n_failed += 1
+            print(f"  LOO {i + 1}/{N} FAILED: {e}")
             continue
 
         # Predict test point
@@ -687,6 +689,11 @@ def loo_cv_hitters(data: list[dict], draws: int = 2000, warmup: int = 1000) -> d
         if (i + 1) % 10 == 0:
             print(f"  LOO {i + 1}/{N} done")
 
+    if n_failed > 0:
+        print(f"  WARNING: {n_failed}/{N} folds failed")
+    if n_failed == N:
+        raise RuntimeError(f"All {N} LOO-CV hitter folds failed — model is broken")
+
     return _summarize_cv(predictions, "wOBA")
 
 
@@ -697,6 +704,7 @@ def loo_cv_pitchers(data: list[dict], draws: int = 2000, warmup: int = 1000) -> 
 
     N = len(data)
     predictions = []
+    n_failed = 0
     print(f"LOO-CV: {N} pitchers")
 
     for i in range(N):
@@ -714,7 +722,8 @@ def loo_cv_pitchers(data: list[dict], draws: int = 2000, warmup: int = 1000) -> 
                 iter_warmup=warmup, seed=42, show_progress=False,
             )
         except Exception as e:
-            print(f"  LOO {i}/{N} FAILED: {e}")
+            n_failed += 1
+            print(f"  LOO {i + 1}/{N} FAILED: {e}")
             continue
 
         pred = _predict_pitcher_from_fit(fit, test_z)
@@ -730,6 +739,11 @@ def loo_cv_pitchers(data: list[dict], draws: int = 2000, warmup: int = 1000) -> 
 
         if (i + 1) % 10 == 0:
             print(f"  LOO {i + 1}/{N} done")
+
+    if n_failed > 0:
+        print(f"  WARNING: {n_failed}/{N} folds failed")
+    if n_failed == N:
+        raise RuntimeError(f"All {N} LOO-CV pitcher folds failed — model is broken")
 
     return _summarize_cv(predictions, "ERA")
 
@@ -931,8 +945,11 @@ def _predict_hitter_from_fit(fit, row: dict, n_samples: int = 5000) -> dict:
           + params["beta_middle_inf"][idx] * row["is_middle_inf"]
           + params["beta_second_year"][idx] * row["is_second_year"])
 
-    sigma = params["sigma_base"][idx] * np.exp(params["gamma_pa"][idx] * row["z_log_pa"])
-    y_pred = mu + rng.normal(0, np.abs(sigma))
+    # Mirror Stan clamp: keep exponent in [-5, 2] to match model behavior.
+    exponent = np.clip(params["gamma_pa"][idx] * row["z_log_pa"], -5.0, 2.0)
+    sigma = params["sigma_base"][idx] * np.exp(exponent)
+    y_pred = mu + rng.normal(0, sigma)
+    y_pred = np.clip(y_pred, 0, None)  # wOBA >= 0
 
     return {
         "mean": float(np.mean(y_pred)),
@@ -970,9 +987,10 @@ def _predict_pitcher_from_fit(fit, row: dict, n_samples: int = 5000) -> dict:
           + params["beta_reliever"][idx] * row["is_reliever"]
           + params["beta_second_year"][idx] * row["is_second_year"])
 
-    sigma = params["sigma_base"][idx] * np.exp(params["gamma_ip"][idx] * row["z_log_ip"])
-    y_pred = mu + rng.normal(0, np.abs(sigma))
-    y_pred = np.clip(y_pred, 0, None)
+    exponent = np.clip(params["gamma_ip"][idx] * row["z_log_ip"], -5.0, 2.0)
+    sigma = params["sigma_base"][idx] * np.exp(exponent)
+    y_pred = mu + rng.normal(0, sigma)
+    y_pred = np.clip(y_pred, 0, None)  # ERA >= 0
 
     return {
         "mean": float(np.mean(y_pred)),

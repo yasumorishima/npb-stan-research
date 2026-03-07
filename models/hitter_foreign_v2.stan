@@ -69,7 +69,9 @@ model {
       + beta_middle_inf * is_middle_inf[n]
       + beta_second_year * is_second_year[n];
 
-    real sigma_n = sigma_base * exp(fmin(gamma_pa * z_log_pa[n], 2.0));
+    // Clamp exponent to [-5, 2] to prevent sigma underflow (→0/NaN) during warm-up.
+    // exp(-5)≈0.007, exp(2)≈7.4: keeps sigma in a numerically safe range.
+    real sigma_n = sigma_base * exp(fmax(fmin(gamma_pa * z_log_pa[n], 2.0), -5.0));
 
     y[n] ~ normal(mu_n, sigma_n);
   }
@@ -89,7 +91,7 @@ generated quantities {
       + beta_catcher * is_catcher[n]
       + beta_middle_inf * is_middle_inf[n]
       + beta_second_year * is_second_year[n];
-    real sigma_n = sigma_base * exp(fmin(gamma_pa * z_log_pa[n], 2.0));
+    real sigma_n = sigma_base * exp(fmax(fmin(gamma_pa * z_log_pa[n], 2.0), -5.0));
     y_rep[n] = normal_rng(mu_n, sigma_n);
     log_lik[n] = normal_lpdf(y[n] | mu_n, sigma_n);
   }

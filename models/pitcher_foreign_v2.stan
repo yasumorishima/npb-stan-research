@@ -61,7 +61,8 @@ model {
       + beta_reliever * is_reliever[n]
       + beta_second_year * is_second_year[n];
 
-    real sigma_n = sigma_base * exp(fmin(gamma_ip * z_log_ip[n], 2.0));
+    // Clamp exponent to [-5, 2] to prevent sigma underflow (→0/NaN) during warm-up.
+    real sigma_n = sigma_base * exp(fmax(fmin(gamma_ip * z_log_ip[n], 2.0), -5.0));
 
     y[n] ~ normal(mu_n, sigma_n);
   }
@@ -81,7 +82,7 @@ generated quantities {
       + beta_age * z_age[n]
       + beta_reliever * is_reliever[n]
       + beta_second_year * is_second_year[n];
-    real sigma_n = sigma_base * exp(fmin(gamma_ip * z_log_ip[n], 2.0));
+    real sigma_n = sigma_base * exp(fmax(fmin(gamma_ip * z_log_ip[n], 2.0), -5.0));
     y_rep[n] = normal_rng(mu_n, sigma_n);
     log_lik[n] = normal_lpdf(y[n] | mu_n, sigma_n);
   }
