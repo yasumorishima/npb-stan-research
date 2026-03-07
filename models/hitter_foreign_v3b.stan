@@ -4,9 +4,8 @@
 //   v2: mu = lg_avg + beta[league] * z_woba + ...
 //   v3b: mu = alpha[league] + beta[league] * prev_woba_raw + ...
 //
-// This allows MLB .350 and AAA .350 to produce different NPB predictions,
-// because the intercept and slope differ by league.
-// Hierarchical priors on alpha/beta enable partial pooling across leagues.
+// Non-centered parameterization (NCP) to avoid divergent transitions
+// in the hierarchical structure.
 
 data {
   int<lower=0> N;
@@ -25,14 +24,14 @@ data {
 }
 
 parameters {
-  // League-specific affine transformation (hierarchical)
+  // Hierarchical hyperparameters
   real alpha_mu;
   real<lower=0> alpha_sigma;
-  vector[L] alpha;                    // league-specific intercept
+  vector[L] alpha_raw;                // NCP: alpha = alpha_mu + alpha_sigma * alpha_raw
 
   real beta_woba_mu;
   real<lower=0> beta_woba_sigma;
-  vector[L] beta_woba;                // league-specific slope on raw wOBA
+  vector[L] beta_woba_raw;            // NCP: beta_woba = beta_woba_mu + beta_woba_sigma * beta_woba_raw
 
   // Auxiliary features (league-independent)
   real beta_K;
@@ -46,15 +45,20 @@ parameters {
   real gamma_pa;
 }
 
-model {
-  // Hierarchical priors for league-specific parameters
-  alpha_mu ~ normal(0.310, 0.05);     // NPB league-average wOBA
-  alpha_sigma ~ exponential(20);
-  alpha ~ normal(alpha_mu, alpha_sigma);
+transformed parameters {
+  vector[L] alpha = alpha_mu + alpha_sigma * alpha_raw;
+  vector[L] beta_woba = beta_woba_mu + beta_woba_sigma * beta_woba_raw;
+}
 
-  beta_woba_mu ~ normal(0.3, 0.2);   // positive: better prev wOBA -> better NPB wOBA
+model {
+  // Hierarchical priors
+  alpha_mu ~ normal(0.310, 0.05);
+  alpha_sigma ~ exponential(20);
+  alpha_raw ~ std_normal();
+
+  beta_woba_mu ~ normal(0.3, 0.2);
   beta_woba_sigma ~ exponential(5);
-  beta_woba ~ normal(beta_woba_mu, beta_woba_sigma);
+  beta_woba_raw ~ std_normal();
 
   // Auxiliary priors
   beta_K ~ normal(0, 0.05);

@@ -1,24 +1,17 @@
 // Foreign pitcher NPB first-year ERA prediction — v3b
 //
-// Key change from v2:
-//   - Main predictors changed from z-scored ERA to raw K% and BB%
-//     (K%/BB% have higher cross-league reproducibility than ERA)
-//   - League-specific affine transformation on both K% and BB%
-//   - ERA removed as predictor (it's the target variable)
-//   - FIP retained as z-scored auxiliary
+// Main predictors: raw K% and BB% with league-specific affine transformation
+// (K%/BB% have higher cross-league reproducibility than ERA)
 //
-// Model structure:
-//   mu = alpha_K[league] + beta_K[league] * prev_K_raw
-//      + alpha_BB[league] + beta_BB[league] * prev_BB_raw
-//      + beta_fip * z_fip + ...
+// Non-centered parameterization (NCP) to avoid divergent transitions.
 
 data {
   int<lower=0> N;
   int<lower=1> L;
   array[N] int<lower=1, upper=L> league;
   vector[N] y;                        // NPB ERA (target)
-  vector[N] prev_K;                   // raw previous-league K% (NOT z-scored)
-  vector[N] prev_BB;                  // raw previous-league BB% (NOT z-scored)
+  vector[N] prev_K;                   // raw previous-league K%
+  vector[N] prev_BB;                  // raw previous-league BB%
   vector[N] z_fip;                    // z-scored previous-league FIP (auxiliary)
   vector[N] z_K_BB;                   // z_K * z_BB interaction (z-score version)
   vector[N] z_age;
@@ -28,23 +21,23 @@ data {
 }
 
 parameters {
-  // K% league-specific affine transformation (hierarchical)
+  // K% hierarchical (NCP)
   real alpha_K_mu;
   real<lower=0> alpha_K_sigma;
-  vector[L] alpha_K;
+  vector[L] alpha_K_raw;
 
   real beta_K_mu;
   real<lower=0> beta_K_sigma;
-  vector[L] beta_K;
+  vector[L] beta_K_raw;
 
-  // BB% league-specific affine transformation (hierarchical)
+  // BB% hierarchical (NCP)
   real alpha_BB_mu;
   real<lower=0> alpha_BB_sigma;
-  vector[L] alpha_BB;
+  vector[L] alpha_BB_raw;
 
   real beta_BB_mu;
   real<lower=0> beta_BB_sigma;
-  vector[L] beta_BB;
+  vector[L] beta_BB_raw;
 
   // Auxiliary features (league-independent)
   real beta_fip;
@@ -56,26 +49,31 @@ parameters {
   real gamma_ip;
 }
 
+transformed parameters {
+  vector[L] alpha_K = alpha_K_mu + alpha_K_sigma * alpha_K_raw;
+  vector[L] beta_K = beta_K_mu + beta_K_sigma * beta_K_raw;
+  vector[L] alpha_BB = alpha_BB_mu + alpha_BB_sigma * alpha_BB_raw;
+  vector[L] beta_BB = beta_BB_mu + beta_BB_sigma * beta_BB_raw;
+}
+
 model {
   // K% hierarchical priors
-  // Higher K% -> lower ERA, so negative slope expected
   alpha_K_mu ~ normal(3.50, 0.5);
   alpha_K_sigma ~ exponential(5);
-  alpha_K ~ normal(alpha_K_mu, alpha_K_sigma);
+  alpha_K_raw ~ std_normal();
 
-  beta_K_mu ~ normal(-0.05, 0.03);   // K% 1pp up -> ERA ~0.05 down
+  beta_K_mu ~ normal(-0.05, 0.03);
   beta_K_sigma ~ exponential(10);
-  beta_K ~ normal(beta_K_mu, beta_K_sigma);
+  beta_K_raw ~ std_normal();
 
   // BB% hierarchical priors
-  // Higher BB% -> higher ERA, so positive slope expected
   alpha_BB_mu ~ normal(0, 0.5);
   alpha_BB_sigma ~ exponential(5);
-  alpha_BB ~ normal(alpha_BB_mu, alpha_BB_sigma);
+  alpha_BB_raw ~ std_normal();
 
-  beta_BB_mu ~ normal(0.08, 0.05);   // BB% 1pp up -> ERA ~0.08 up
+  beta_BB_mu ~ normal(0.08, 0.05);
   beta_BB_sigma ~ exponential(10);
-  beta_BB ~ normal(beta_BB_mu, beta_BB_sigma);
+  beta_BB_raw ~ std_normal();
 
   // Auxiliary priors
   beta_fip ~ normal(0, 0.3);
