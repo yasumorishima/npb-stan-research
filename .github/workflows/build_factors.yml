@@ -32,6 +32,9 @@ on:
           - foreign_v2
           - foreign_v2_loo
           - foreign_v2_expanding
+          - foreign_v3b
+          - foreign_v3b_loo
+          - foreign_v3b_expanding
 
 permissions:
   contents: write
@@ -62,7 +65,7 @@ jobs:
         run: pip install "pymc>=5.0" "arviz>=0.15"
 
       - name: Install cmdstanpy + ArviZ (Stan models)
-        if: inputs.step == 'run_stan_model' || inputs.step == 'run_jpn_model' || startsWith(inputs.step, 'foreign_v2')
+        if: inputs.step == 'run_stan_model' || inputs.step == 'run_jpn_model' || startsWith(inputs.step, 'foreign_v2') || startsWith(inputs.step, 'foreign_v3b')
         run: |
           pip install -r requirements-model.txt
           python -c "from cmdstanpy import install_cmdstan; install_cmdstan()"
@@ -144,6 +147,18 @@ jobs:
         if: inputs.step == 'foreign_v2_expanding'
         run: python src/foreign_v2_model.py --draws 1000 --warmup 500 --expanding-cv
 
+      - name: Foreign v3b — fit full model (league-specific affine)
+        if: inputs.step == 'foreign_v3b'
+        run: python src/foreign_v3b_model.py --draws 2000 --warmup 1000 --fit-only
+
+      - name: Foreign v3b — LOO cross-validation (heavy, ~2h)
+        if: inputs.step == 'foreign_v3b_loo'
+        run: python src/foreign_v3b_model.py --draws 1000 --warmup 500 --loo-cv
+
+      - name: Foreign v3b — expanding-window CV
+        if: inputs.step == 'foreign_v3b_expanding'
+        run: python src/foreign_v3b_model.py --draws 1000 --warmup 500 --expanding-cv
+
       - name: Commit results to repo
         run: |
           git config user.name "github-actions[bot]"
@@ -165,7 +180,7 @@ jobs:
           retention-days: 30
 
       - name: Discord notification on completion
-        if: always() && startsWith(inputs.step, 'foreign_v2')
+        if: always() && (startsWith(inputs.step, 'foreign_v2') || startsWith(inputs.step, 'foreign_v3b'))
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
