@@ -1,0 +1,8 @@
+{
+  "v1_baseline": {
+    "hitter_mae_v1_baseline": 0.04183129607287172,
+    "pitcher_mae_v1_baseline": 1.0457600567109073,
+    "hitter_n": 129,
+    "pitcher_n": 159
+  }
+}
