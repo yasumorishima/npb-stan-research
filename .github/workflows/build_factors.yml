@@ -179,7 +179,9 @@ jobs:
 
       - name: Fetch career stats from MLB Stats API
         if: inputs.step == 'fetch_career_stats'
-        run: python scripts/fetch_career_stats.py
+        run: |
+          pip install requests
+          python scripts/fetch_career_stats.py
 
       - name: Foreign v5 — fit full model (Mixture of Experts)
         if: inputs.step == 'foreign_v5'
