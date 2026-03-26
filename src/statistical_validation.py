@@ -22,6 +22,7 @@ Output:
 import csv
 import json
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -39,6 +40,14 @@ from stan_jpn_model import (
     load_birthday_df,
     standardize_features,
 )
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -1097,6 +1106,7 @@ def run_foreign_loocv():
 
 
 def main():
+    t0 = time.time()
     print("=" * 70)
     print("Step 11: Statistical Validation — Age Curve + Recency Weighting")
     print("=" * 70)
@@ -1118,6 +1128,8 @@ def main():
         loocv_p_path, index=False, encoding="utf-8-sig")
     print(f"  Saved -> {loocv_h_path}")
     print(f"  Saved -> {loocv_p_path}")
+
+    _log_elapsed("Japanese LOO-CV (uniform)", t0)
 
     # 1a. Player-level significance tests
     print("\n[1a] Player-level significance tests — ALL years")
@@ -1216,6 +1228,8 @@ def main():
               f"{noi['mae_marcel']:>10.3f}  {noi['mae_stan']:>10.3f}  "
               f"{noi['delta_mae']:>+8.3f}")
 
+    _log_elapsed("player + team tests + sweep", t0)
+
     # ── 2. 2021 (COVID) exclusion ──
     print("\n[2] 2021 exclusion — 7-year results")
     h_no21 = h_df[h_df["year"] != 2021]
@@ -1226,9 +1240,13 @@ def main():
     team_no21, _ = team_level_mae(h_no21, p_no21, years=years_no21,
                                   label="Excluding 2021 (λ=1.0)")
 
+    _log_elapsed("2021 exclusion test", t0)
+
     # ── 3. Foreign player LOO-CV ──
     print("\n[3] Foreign Player Stan v1 LOO-CV (2015-2025)")
     foreign = run_foreign_loocv()
+
+    _log_elapsed("foreign LOO-CV", t0)
 
     # ── 4. Recency weighting comparison ──
     print("\n[4] Recency Weighting Comparison")
@@ -1242,6 +1260,8 @@ def main():
             "n_pitchers": len(p_lam),
             "player_level": res,
         }
+
+    _log_elapsed("recency weighting comparison", t0)
 
     # ── 5. FIP vs ERA comparison ──
     pitcher_fip_results = {}
@@ -1379,6 +1399,7 @@ def main():
     out_path.write_text(
         json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    _log_elapsed("total", t0)
     print(f"\nSaved -> {out_path}")
 
 

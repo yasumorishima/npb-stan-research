@@ -22,11 +22,21 @@ Output:
 """
 
 import json
+import time
 import warnings
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -552,6 +562,7 @@ def run_stan_model(model_path: Path, stan_data: dict, draws=1000, warmup=500):
 
 
 def main(draws=1000, warmup=500):
+    t0 = time.time()
     print("Loading raw data...")
     saber    = pd.read_csv(RAW_DIR / "npb_sabermetrics_2015_2025.csv",    encoding="utf-8-sig")
     pitchers = pd.read_csv(RAW_DIR / "npb_pitchers_2015_2025.csv",        encoding="utf-8-sig")
@@ -576,6 +587,8 @@ def main(draws=1000, warmup=500):
     if len(train_h) == 0 or len(test_h) == 0:
         print("ERROR: insufficient data")
         return
+
+    _log_elapsed("data loading + build_dataset", t0)
 
     # ── Standardize ───────────────────────────────────────────────────────────
     feat_cols_h = ["K_pct", "BB_pct", "BABIP", "age_from_peak"]
@@ -602,6 +615,7 @@ def main(draws=1000, warmup=500):
         "z_age_pred":         test_z_h[:, 3].tolist(),
     }
     fit_h = run_stan_model(ROOT / "models" / "hitter_jpn.stan", stan_data_h, draws, warmup)
+    _log_elapsed("hitter Stan compile + sampling", t0)
 
     # posterior means of test predictions
     stan_pred_h = fit_h.stan_variable("stan_pred").mean(axis=0)
@@ -640,6 +654,7 @@ def main(draws=1000, warmup=500):
         "z_age_pred":      test_z_p[:, 4].tolist(),
     }
     fit_p = run_stan_model(ROOT / "models" / "pitcher_jpn.stan", stan_data_p, draws, warmup)
+    _log_elapsed("pitcher Stan compile + sampling", t0)
 
     stan_pred_p = fit_p.stan_variable("stan_pred").mean(axis=0)
     delta_K_p    = float(fit_p.stan_variable("delta_K").mean())
@@ -698,6 +713,7 @@ def main(draws=1000, warmup=500):
     (MODEL_DIR / "jpn_comparison.json").write_text(
         json.dumps(comparison, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    _log_elapsed("total", t0)
     print(f"\nSaved -> {MODEL_DIR / 'jpn_hitter_predictions.csv'}")
     print(f"Saved -> {MODEL_DIR / 'jpn_pitcher_predictions.csv'}")
     print(f"Saved -> {MODEL_DIR / 'jpn_comparison.json'}")

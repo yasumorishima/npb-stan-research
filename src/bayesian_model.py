@@ -23,12 +23,21 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import time
 from collections import defaultdict
 from pathlib import Path
 
 import arviz as az
 import numpy as np
 import pymc as pm
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 FOREIGN_DIR = DATA_DIR / "foreign"
@@ -346,6 +355,8 @@ def write_outputs(
 
 
 def main() -> None:
+    t0 = time.time()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--draws", type=int, default=2000)
     parser.add_argument("--tune", type=int, default=1000)
@@ -369,6 +380,8 @@ def main() -> None:
     print(f"\nHitters — train: {len(h_train)}, test: {len(h_test)}")
     print(f"Pitchers — train: {len(p_train)}, test: {len(p_test)}")
 
+    _log_elapsed("data loading", t0)
+
     # === Hitter Model ===
     hitter_trace = None
     hitter_bt = None
@@ -376,6 +389,7 @@ def main() -> None:
         _, hitter_trace = fit_hitter_model(
             h_train, league_avg_woba, draws=args.draws, tune=args.tune,
         )
+        _log_elapsed("hitter PyMC sampling", t0)
         if h_test:
             print("\n=== Hitter Backtest (Shrinkage) ===")
             hitter_bt = backtest(
@@ -392,6 +406,8 @@ def main() -> None:
             imp = (hitter_bt["baseline_mae"] - hitter_bt["bayes_mae"]) / hitter_bt["baseline_mae"] * 100
             print(f"  Improvement vs baseline: {imp:+.1f}%")
 
+        _log_elapsed("hitter backtest", t0)
+
     # === Pitcher Model ===
     pitcher_trace = None
     pitcher_bt = None
@@ -399,6 +415,7 @@ def main() -> None:
         _, pitcher_trace = fit_pitcher_model(
             p_train, league_avg_era, draws=args.draws, tune=args.tune,
         )
+        _log_elapsed("pitcher PyMC sampling", t0)
         if p_test:
             print("\n=== Pitcher Backtest (Shrinkage) ===")
             pitcher_bt = backtest(
@@ -415,8 +432,11 @@ def main() -> None:
             imp = (pitcher_bt["baseline_mae"] - pitcher_bt["bayes_mae"]) / pitcher_bt["baseline_mae"] * 100
             print(f"  Improvement vs baseline: {imp:+.1f}%")
 
+        _log_elapsed("pitcher backtest", t0)
+
     # Write
     write_outputs(hitter_trace, pitcher_trace, hitter_bt, pitcher_bt)
+    _log_elapsed("total", t0)
     print(f"\nOutputs written to {MODEL_DIR}/")
 
 

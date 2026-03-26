@@ -18,10 +18,20 @@ import argparse
 import csv
 import json
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_FOREIGN = ROOT / "data" / "foreign"
@@ -1118,6 +1128,8 @@ def v1_baseline_predictions(hitters: list[dict], pitchers: list[dict]) -> dict:
 # ─────────────────────────────────────────────
 
 def main():
+    t0 = time.time()
+
     parser = argparse.ArgumentParser(description="Foreign player v4a model (Student-t)")
     parser.add_argument("--draws", type=int, default=2000)
     parser.add_argument("--warmup", type=int, default=1000)
@@ -1152,6 +1164,8 @@ def main():
     print(f"  v1 hitter MAE (lg_avg baseline): {v1['hitter_mae_v1_baseline']:.4f}")
     print(f"  v1 pitcher MAE (lg_avg baseline): {v1['pitcher_mae_v1_baseline']:.4f}")
 
+    _log_elapsed("dataset build + v1 baseline", t0)
+
     backtest = {"v1_baseline": v1}
 
     if args.loo_cv:
@@ -1160,11 +1174,13 @@ def main():
         hitters_copy = [dict(d) for d in hitters]
         loo_h = loo_cv_hitters(hitters_copy, draws=args.draws, warmup=args.warmup)
         backtest["loo_hitter"] = loo_h
+        _log_elapsed("LOO-CV hitters", t0)
 
         print("\n[4/5] Running LOO-CV for pitchers...")
         pitchers_copy = [dict(d) for d in pitchers]
         loo_p = loo_cv_pitchers(pitchers_copy, draws=args.draws, warmup=args.warmup)
         backtest["loo_pitcher"] = loo_p
+        _log_elapsed("LOO-CV pitchers", t0)
 
     if args.expanding_cv:
         # Expanding window CV
@@ -1173,12 +1189,14 @@ def main():
         std_h, hitters_std = standardize_hitters(hitters_copy)
         exp_h = expanding_cv_hitters(hitters_std, draws=args.draws, warmup=args.warmup)
         backtest["expanding_hitter"] = exp_h
+        _log_elapsed("expanding-CV hitters", t0)
 
         print("\n[4/5] Running expanding-window CV for pitchers...")
         pitchers_copy = [dict(d) for d in pitchers]
         std_p, pitchers_std = standardize_pitchers(pitchers_copy)
         exp_p = expanding_cv_pitchers(pitchers_std, draws=args.draws, warmup=args.warmup)
         backtest["expanding_pitcher"] = exp_p
+        _log_elapsed("expanding-CV pitchers", t0)
 
     # Full model fit (always run)
     print("\n[5/5] Fitting full model on all data...")
@@ -1189,6 +1207,7 @@ def main():
     print(f"  Hitter Stan data: N={stan_h['N']}, L={stan_h['L']}")
     fit_h = fit_model("hitter_foreign_v4a.stan", stan_h,
                       draws=args.draws, warmup=args.warmup)
+    _log_elapsed("full model hitter Stan sampling", t0)
     print("\n  Hitter diagnostics:")
     check_diagnostics(fit_h)
     hitter_params = extract_posteriors_hitters(fit_h)
@@ -1199,6 +1218,7 @@ def main():
     print(f"\n  Pitcher Stan data: N={stan_p['N']}, L={stan_p['L']}")
     fit_p = fit_model("pitcher_foreign_v4a.stan", stan_p,
                       draws=args.draws, warmup=args.warmup)
+    _log_elapsed("full model pitcher Stan sampling", t0)
     print("\n  Pitcher diagnostics:")
     check_diagnostics(fit_p)
     pitcher_params = extract_posteriors_pitchers(fit_p)
@@ -1223,6 +1243,7 @@ def main():
     save_results(hitter_params, pitcher_params, std_h, std_p,
                  backtest, DATA_MODEL)
 
+    _log_elapsed("total", t0)
     print("\nDone!")
 
 

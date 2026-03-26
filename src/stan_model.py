@@ -18,12 +18,21 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import time
 from collections import defaultdict
 from pathlib import Path
 
 import arviz as az
 import numpy as np
 from cmdstanpy import CmdStanModel
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 FOREIGN_DIR = DATA_DIR / "foreign"
@@ -562,6 +571,8 @@ def write_stan_outputs(results: dict) -> None:
 
 
 def main() -> None:
+    t0 = time.time()
+
     parser = argparse.ArgumentParser(description="Stan-based NPB foreign player projection")
     parser.add_argument("--draws", type=int, default=2000)
     parser.add_argument("--warmup", type=int, default=1000)
@@ -585,6 +596,8 @@ def main() -> None:
     print(f"\nHitters — train: {len(h_train)}, test: {len(h_test)}")
     print(f"Pitchers — train: {len(p_train)}, test: {len(p_test)}")
 
+    _log_elapsed("data loading", t0)
+
     results: dict = {"hitter": {}, "pitcher": {}}
 
     # === Hitter Models ===
@@ -598,6 +611,7 @@ def main() -> None:
                 h_train, league_avg_woba,
                 n_features=n_feat, draws=args.draws, warmup=args.warmup,
             )
+            _log_elapsed(f"hitter Stan sampling ({label})", t0)
 
             # Diagnostics
             diag = check_diagnostics(fit)
@@ -633,6 +647,7 @@ def main() -> None:
                 p_train, league_avg_era,
                 n_features=n_feat, draws=args.draws, warmup=args.warmup,
             )
+            _log_elapsed(f"pitcher Stan sampling ({label})", t0)
 
             # Diagnostics
             diag = check_diagnostics(fit)
@@ -658,6 +673,7 @@ def main() -> None:
             print(f"    vs baseline:  {imp:+.1f}%")
 
     # Write outputs
+    _log_elapsed("all models complete", t0)
     write_stan_outputs(results)
 
     # Final summary

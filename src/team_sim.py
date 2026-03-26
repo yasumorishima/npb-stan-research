@@ -15,10 +15,19 @@ Output:
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+def _log_elapsed(label: str, start: float, budget_min: int = 360):
+    elapsed_min = (time.time() - start) / 60
+    print(f"  [{label}] elapsed: {elapsed_min:.1f} min / {budget_min} min budget")
+    if elapsed_min > budget_min * 0.8:
+        print(f"  WARNING: {label} used {elapsed_min:.0f}/{budget_min} min "
+              f"({elapsed_min / budget_min * 100:.0f}%) -- timeout risk!")
+
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "data" / "projections"
@@ -356,6 +365,7 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
 
     Runs twice (without / with park factor correction) and prints a comparison.
     """
+    t0 = time.time()
     print("Loading historical Marcel team projections...")
     hist, actual = load_historical()
 
@@ -389,6 +399,7 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
 
     df_base = _run_one_backtest(merged, rng_base, n_sim, pf_map=None)
     df_pf   = _run_one_backtest(merged, rng_pf,   n_sim, pf_map=pf_map if pf_map else None)
+    _log_elapsed("backtest simulation", t0)
 
     # ── Print comparison ──────────────────────────────────────────────────────
     def _stats(df: pd.DataFrame) -> tuple[float, float, float]:
@@ -481,9 +492,11 @@ def run_backtest(n_sim: int = N_SIM, seed: int = 42) -> None:
     json_path = OUT_DIR / "backtest_results.json"
     json_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Saved -> {json_path}")
+    _log_elapsed("backtest total", t0)
 
 
 def main(n_sim: int = N_SIM) -> None:
+    t0 = time.time()
     print("Loading Marcel 2026 projections from npb-prediction...")
     hitters, pitchers = load_marcel()
     print(f"  Hitters : {len(hitters):3d} players / {hitters['team'].nunique()} teams")
@@ -507,8 +520,11 @@ def main(n_sim: int = N_SIM) -> None:
         print(f"  WARNING: Could not load park factors ({e}). Running without PF correction.")
         park_factors = None
 
+    _log_elapsed("data loading + normalization", t0)
+
     print(f"Running {n_sim:,} simulations...")
     wins_sim = simulate(hitters, pitchers, n_sim, turnover=turnover, park_factors=park_factors)
+    _log_elapsed("Monte Carlo simulation", t0)
 
     results = compute_probabilities(wins_sim)
 
@@ -552,6 +568,7 @@ def main(n_sim: int = N_SIM) -> None:
         .to_csv(OUT_DIR / "team_sim_2026.csv", index=False, encoding="utf-8-sig")
     )
     print(f"Saved -> {OUT_DIR / 'team_sim_2026.csv'}")
+    _log_elapsed("total", t0)
 
 
 if __name__ == "__main__":
